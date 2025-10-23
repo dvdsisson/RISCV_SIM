@@ -47,7 +47,7 @@ typedef struct {
     int      EX_CS[NUM_CONTROL_SIGNALS];
 
     // MEM/WB 
-    uint32_t MEM_ALU_RESULT, MEM_DATA;
+    uint32_t MEM_PC, MEM_ALU_RESULT, MEM_DATA;
     int      MEM_RD, MEM_V;
     int      MEM_CS[NUM_CONTROL_SIGNALS];
 } PipeState;
@@ -306,7 +306,7 @@ int sext(int num, int signbit){
        return(num & mask);
     }
  }
- 
+
 /* ========== Stage implementations ========== */
 
 /void IF_stage(void) {
@@ -406,8 +406,9 @@ void MEM_stage(void) {
     }
 
     NEW_PS.MEM_ALU_RESULT = PS.EX_ALU_RESULT;
-    NEW_PS.MEM_DATA = mem_data;
-    NEW_PS.MEM_RD = PS.EX_RD;
+    NEW_PS.MEM_DATA       = mem_data;
+    NEW_PS.MEM_PC         = PS.EX_PC;
+    NEW_PS.MEM_RD         = PS.EX_RD;
     memcpy(NEW_PS.MEM_CS, PS.EX_CS, sizeof(int) * NUM_CS_SIGNALS);
     NEW_PS.MEM_V = 1;
 }
@@ -422,9 +423,18 @@ void WB_stage(void) {
 
     int wb_mux = (PS.MEM_CS[CS_WB_MUX1] << 1) | PS.MEM_CS[CS_WB_MUX0];
     switch (wb_mux) {
-        case 0: wb_data = PS.MEM_ALU_RESULT; break;
-        case 1: wb_data = PS.MEM_DATA; break;
-        case 2: wb_data = PS.MEM_ALU_RESULT + 4; break; 
+        case 0: // PC + 4
+            wb_data = PS.MEM_PC + 4;
+            break;
+        case 1: // Memory result
+            wb_data = PS.MEM_DATA;
+            break;
+        case 2: // ALU result
+            wb_data = PS.MEM_ALU_RESULT;
+            break;
+        default:
+            wb_data = 0;
+            break;
     }
 
     if (PS.MEM_CS[CS_LDREG] && rd != 0)
