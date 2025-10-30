@@ -10,7 +10,7 @@
 #define FALSE 0
 #define Low32bits(x) ((x)&0xFFFFFFFF)
 
-#define NUM_CONTROL_STORE_ROWS   45
+#define NUM_CONTROL_STORE_ROWS   60
 #define NUM_CONTROL_SIGNALS      24
 #define WORDS_IN_MEM             0x100000  //4 MB
 
@@ -33,7 +33,12 @@ int dcache_r;
 /***************************************************************/
 /*  Main memory and control store                              */
 /***************************************************************/
-int CONTROL_STORE[NUM_CONTROL_STORE_ROWS][NUM_CONTROL_SIGNALS];
+int CONTROL_STORE_ALU[NUM_CONTROL_STORE_ROWS][NUM_CONTROL_SIGNALS];
+int CONTROL_STORE_MULT[NUM_CONTROL_STORE_ROWS][NUM_CONTROL_SIGNALS];
+int CONTROL_STORE_LDST[NUM_CONTROL_STORE_ROWS][NUM_CONTROL_SIGNALS];
+int CONTROL_STORE_BR[NUM_CONTROL_STORE_ROWS][NUM_CONTROL_SIGNALS];
+int CONTROL_STORE_ADDCONST[NUM_CONTROL_STORE_ROWS][NUM_CONTROL_SIGNALS];
+int CONTROL_STORE_JMP[NUM_CONTROL_STORE_ROWS][NUM_CONTROL_SIGNALS];
 uint8_t MEMORY[WORDS_IN_MEM][4];   /* byte-addressable */
 
 /***************************************************************/
@@ -77,6 +82,7 @@ enum {
     CS_LDST,
     CS_LDST_OP2, CS_LDST_OP1, CS_LDST_OP0,
     CS_WB_MUX1, CS_WB_MUX0,
+    CS_TA_ADDR
     NUM_CS_FIELDS
 };
 
@@ -414,10 +420,10 @@ int toIntegerFromUnsignedString(char* binary, int bits) {
 // not sure if this is right
 int sext(int num, int signbit){
     if ((num >> (signbit)) & 0x01){
-       int mask = (- 1) - ((2 << signbit) - 1);
+       int mask = (0x0FFFF) - ((0x010 << signbit) - 0x01);
        return(num | mask);
     } else if (!((num >> (signbit)) & 0x01)){
-       int mask = (2 << signbit) - 1;
+       int mask = (0x010 << signbit) - 0x01;
        return(num & mask);
     }
  }
@@ -524,65 +530,91 @@ void EX_stage(void) {
     int comp_op = (PS.ID_CS[CS_COMP_OP2] << 2) | (PS.ID_CS[CS_COMP_OP1] << 1) |
                  PS.ID_CS[CS_COMP_OP0];
     uint32_t srcA = PS.ID_RS1;
-    uint32_t srcB = (IR & (1 << 5)) ? PS.ID_IMM : PS.ID_RS2;
-
+    uint32_t srcB = (CONTROL_STORE[CS_ALU_MUX]) ? PS.ID_IMM : sext(PS.ID_RS2, 12);
     uint32_t opcode = IR & ((1 << 7) - 1);
 
-    switch (opcode)
-    {
-        case 51: //x33
-            srcB = PS.ID_IMM;
-        case 19: //x13
-            switch (alu_op) {
-            // most of the current cases are not right
-            // someone needs to do all of the cases based on ALU instructions
-            // should end up with cases 0 through 31
-            // note that some of the operations are signed, some of the operations are unsigned
-            // the register values are unsigned 32 bit integers, so you're going to have to manipulate values accordingly
-            case 0: 
-                if (IR & (1 << 30)){result = srcA + srcB;}
-                else {result = srcA - srcB;}
-                break; 
-            case 1: result = srcA << srcB; break;
-            case 2: result = (int32_t) srcA < (int32_t) srcB; break;
-            case 3: result = srcA < srcB; break;
-            case 4: result = srcA ^ srcB; break;
-            case 5: 
-                if (IR & (1 << 30)) {result = (int32_t) srcA >> srcB;} //arith
-                    else {result = srcA >> srcB;} //logical
-                    break;
-            case 6: result = srcA | srcB; break;
-            case 7: result = srcA & srcB; break;
-            default: result = 0; break;
-            ex_stall = 0;
 
-        }
-        
-        case 99: //x63
-            switch (comp_op) {
-                // Done - cases 0 and 7 are good someone needs to do cases 1 through 6 based on branch instructions comp should equal one if branch is being taken, zero is branch is not being taken note that some of the branch comparisons are signed, some of the branch comparisons are unsigned the register values are unsigned 32 bit integers, so you're going to have to manipulate values accordingly
-                case 0: comp_result = ((int32_t) RS1 == (int32_t) RS2); break;
-                case 1: comp_result = ((int32_t) RS1 != (int32_t) RS2); break;
-                //case 2: comp_result = 0; break;
-                //case 3: comp_result = 0; break;
-                case 4: comp_result = ((int32_t) RS1 <  (int32_t) RS2); break;
-                case 5: comp_result = ((int32_t) RS1 >= (int32_t) RS2); break;
-                case 6: comp_result = ((uint32_t) RS1 <  (uint32_t) RS2); break;
-                case 7: comp_result = ((uint32_t) RS1 >= (uint32_t) RS2); break;
-                default: comp_result = 0; break;
-            }
-            ta = PS.ID_CS[CS_TA_MUX] ? PS.ID_PC : PS.ID_RS1;
-            ta = ta + PS.ID_IMM;
-            jmp_pc = ta;
-            
-            
-        default:
-            break;
+        // case 51: //x33
+        //     srcB = PS.ID_IMM;
+        // case 19: //x13
+        //     switch (alu_op) {
+        //     // most of the current cases are not right
+        //     // someone needs to do all of the cases based on ALU instructions
+        //     // should end up with cases 0 through 31
+        //     // note that some of the operations are signed, some of the operations are unsigned
+        //     // the register values are unsigned 32 bit integers, so you're going to have to manipulate values accordingly
+        //     case 0: 
+        //         // if (IR & (1 << 30)){result = srcA + srcB;}
+        //         // else {result = srcA - srcB;}
+        //         // break;
+        //         if (IR & (1 << 30)){result = srcA - srcB;}
+        //         else {result = srcA + srcB;}
+        //         break; 
+        //     case 1: result = srcA << srcB; break;
+        //     case 2: result = (int32_t) srcA < (int32_t) srcB; break;
+        //     case 3: result = srcA < srcB; break;
+        //     case 4: result = srcA ^ srcB; break;
+        //     case 5: 
+        //         if (IR & (1 << 30)) {result = (int32_t) srcA >> srcB;} //arith
+        //             else {result = srcA >> srcB;} //logical
+        //             break;
+        //     case 6: result = srcA | srcB; break;
+        //     case 7: result = srcA & srcB; break;
+        //     default: result = 0; break;
+        //     ex_stall = 0;
+
+        // }
+
+
+    switch (alu_op) { 
+        case 0: result = srcA + srcB;
+        case 1: result = srcA - srcB;
+        case 4: result = srcA >> (srcB & 0x1F);
+        case 5: result = (int32_t)srcA >> (srcB & 0x1F);
+        case 6: result = srcA << (srcB & 0x1F);
+        case 8:
+            if ((srcA[31] ^ srcB[31]) & srcA[31]) {result = 0x01; }
+            else if ((int32_t)(srcA - srcB)[31]){ result = 0x01; }
+            else { result = 0x00; }
+        case 9: result = (srcA < srcB) ? 0x01 : 0x00;
+        case 12: result = srcA | srcB;
+        case 13: result = srcA & srcB;
+        case 14: result = srcA ^ (srcB & 0x0FFFF);
+        case 15: result = (int32_t)srcA * (int32_t)srcB;
+        case 16: result = ((int32_t)srcA * (int32_t)srcB) >> 32;
+        case 17: result = ((int32_t)srcA * (uint32_t)srcB) >> 32;
+        case 18: result = ((uint32_t)srcA * (uint32_t)srcB) >> 32;
+        case 19: result = ((int32_t)srcA/(int32_t)srcB);
+        case 20: result = ((uint32_t)srcA/(uint32_t)srcB);
+        case 21: result = ((int32_t)srcA%(int32_t)srcB);
+        case 22: result = ((uint32_t)srcA%(uint32_t)srcB);
+        case 31: result = srcB << 12;
+        default: result = 0x0;
     }
+    ex_stall = 0;
+    result = result & 0x0FFFF;
     
+    //BRANCH
+    switch (comp_op) { 
+        // Done - cases 0 and 7 are good someone needs to do cases 1 through 6 based on branch instructions comp should equal one if branch is being taken, zero is branch is not being taken note that some of the branch comparisons are signed, some of the branch comparisons are unsigned the register values are unsigned 32 bit integers, so you're going to have to manipulate values accordingly
+        case 0: comp_result = 0;
+        case 1: comp_result = ((int32_t) srcA == (int32_t) PS.ID_RS2); 
+        case 2: comp_result = ((int32_t) srcA != (int32_t) PS.ID_RS2);
+        case 3: comp_result = ((int32_t) srcA <  (int32_t) PS.ID_RS2);
+        case 4: comp_result = ((int32_t) srcA >= (int32_t) PS.ID_RS2);
+        case 5: comp_result = ((uint32_t) srcA <  (uint32_t) PS.ID_RS2);
+        case 6: comp_result = ((uint32_t) srcA >= (uint32_t) PS.ID_RS2);
+        default: comp_result = 1;
+    }
+
+    //JMP Stuff
+    ta = PS.ID_CS[CS_TA_MUX] ? PS.ID_PC : PS.ID_RS1;
+    ta = (CONTROL_STORE[CS_TA_ADDR]) ? ta + (PS.ID_IMM << 12) : ta + PS.ID_IMM; // also does AUIPC
+    jmp_pc = ta;
+
     
 
-    jmp_pcmux = comp_result & PS.ID_V;
+    jmp_pcmux = (comp_result & PS.ID_V) & PS.ID_CS[JMP_SIG];
 
     int LD_MEM = 0;
     if(mem_stall == 0) {LD_MEM = 1;}
@@ -605,9 +637,40 @@ void EX_stage(void) {
 void ID_stage(void) {
 
     uint32_t IR = PS.IF_IR;
-    int opcode = IR & 0x7F;
-    int row = opcode;  /* assume 1:1 mapping per instruction for now */
-    // someone needs to go through and map individual opcodes to corresponding row numbers
+    //SUPPOSE WE HAVE WAY TO ACCESS EACH CONTROL STORE TABLE
+
+    if ((IR >> 0x02) & 0x01) {
+        if ((IR >> 0x04) & 0x01) {
+            CONTROL_STORE = CONTROL_STORE_ADDCONST;
+            row = (IR >> 5) & 0x01;
+        } else {
+            CONTROL_STORE = CONTROL_STORE_JMP;
+            row = (IR >> 3) & 0x01;
+        
+        }
+    } else {
+        if (((IR >> 0x02) & 0x01) & ((IR >> 0x03) & 0x01) & ((IR >> 0x04) & 0x01)) {
+            if ((IR >> 0x19) & 0x01){
+                CONTROL_STORE = CONTROL_STORE_MULT;
+                row = (((IR >> 14) & 0x01) << 0x02) + (((IR >> 13) & 0x01) << 0x01) + ((IR >> 12) & 0x01);
+            } else {
+                CONTROL_STORE = CONTROL_STORE_ALU;
+                row = (((IR >> 30) & 0x01) << 4) + (((IR >> 5) & 0x01) << 3) + (((IR >> 14) & 0x01) << 2) + (((IR >> 13) & 0x01) << 1) + ((IR >> 12) & 0x01);
+            }
+        } else {
+            if ((IR >> 0x06) & 0x01) {
+                CONTROL_STORE = CONTROL_STORE_BR;
+                row = (((IR >> 14) & 0x01) << 0x02) + (((IR >> 13) & 0x01) << 0x01) + ((IR >> 12) & 0x01);
+            } else {
+                CONTROL_STORE = CONTROL_STORE_LDST;
+                row = (((IR >> 5) & 0x01) << 3) + (((IR >> 14) & 0x01) << 2) + (((IR >> 13) & 0x01) << 1) + ((IR >> 12) & 0x01);
+            }
+        }
+    }
+    
+    int opcode = IR & 0x07F;
+    int func3 = (IR >> 12) & 0x07;
+    int bit30 = (IR >> 30) & 0x01;
     id_br_stall = CONTROL_STORE[row][CS_BR_STALL] & PS.IF_V;
 
     int rs1 = (IR >> 15) & 0x1F;
