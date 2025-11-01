@@ -10,7 +10,13 @@
 #define FALSE 0
 #define Low32bits(x) ((x)&0xFFFFFFFF)
 
-#define NUM_CONTROL_STORE_ROWS   60
+#define NUM_CONTROL_STORE_ROWS          68
+#define NUM_CONTROL_STORE_ROWS_ALU      32
+#define NUM_CONTROL_STORE_ROWS_MULT     8
+#define NUM_CONTROL_STORE_ROWS_LDST     16
+#define NUM_CONTROL_STORE_ROWS_BR       8
+#define NUM_CONTROL_STORE_ROWS_ADDCONST 2
+#define NUM_CONTROL_STORE_ROWS_JMP      2
 #define NUM_CONTROL_SIGNALS      24
 #define WORDS_IN_MEM             0x100000  //4 MB
 
@@ -33,12 +39,13 @@ int dcache_r;
 /***************************************************************/
 /*  Main memory and control store                              */
 /***************************************************************/
-int CONTROL_STORE_ALU[NUM_CONTROL_STORE_ROWS][NUM_CONTROL_SIGNALS];
-int CONTROL_STORE_MULT[NUM_CONTROL_STORE_ROWS][NUM_CONTROL_SIGNALS];
-int CONTROL_STORE_LDST[NUM_CONTROL_STORE_ROWS][NUM_CONTROL_SIGNALS];
-int CONTROL_STORE_BR[NUM_CONTROL_STORE_ROWS][NUM_CONTROL_SIGNALS];
-int CONTROL_STORE_ADDCONST[NUM_CONTROL_STORE_ROWS][NUM_CONTROL_SIGNALS];
-int CONTROL_STORE_JMP[NUM_CONTROL_STORE_ROWS][NUM_CONTROL_SIGNALS];
+int CONTROL_STORE[NUM_CONTROL_STORE_ROWS][NUM_CONTROL_SIGNALS];
+int CONTROL_STORE_ALU[NUM_CONTROL_STORE_ROWS_ALU][NUM_CONTROL_SIGNALS];
+int CONTROL_STORE_MULT[NUM_CONTROL_STORE_ROWS_MULT][NUM_CONTROL_SIGNALS];
+int CONTROL_STORE_LDST[NUM_CONTROL_STORE_ROWS_LDST][NUM_CONTROL_SIGNALS];
+int CONTROL_STORE_BR[NUM_CONTROL_STORE_ROWS_BR][NUM_CONTROL_SIGNALS];
+int CONTROL_STORE_ADDCONST[NUM_CONTROL_STORE_ROWS_ADDCONST][NUM_CONTROL_SIGNALS];
+int CONTROL_STORE_JMP[2][NUM_CONTROL_STORE_ROWS_JMP];
 uint8_t MEMORY[WORDS_IN_MEM][4];   /* byte-addressable */
 
 /***************************************************************/
@@ -82,7 +89,6 @@ enum {
     CS_LDST,
     CS_LDST_OP2, CS_LDST_OP1, CS_LDST_OP0,
     CS_WB_MUX1, CS_WB_MUX0,
-    CS_TA_ADDR
     NUM_CS_FIELDS
 };
 
@@ -117,6 +123,43 @@ void init_control_store(char *filename) {
         row++;
     }
     fclose(fp);
+    int index = 0;
+    for(int i = 0; i < NUM_CONTROL_STORE_ROWS_ALU; i++) {
+        for(int j = 0; j < NUM_CONTROL_SIGNALS; j++) {
+            CONTROL_STORE_ALU[i][j] = CONTROL_STORE[index][j];
+        }
+        index++;
+    }
+    for(int i = 0; i < NUM_CONTROL_STORE_ROWS_MULT; i++) {
+        for(int j = 0; j < NUM_CONTROL_SIGNALS; j++) {
+            CONTROL_STORE_MULT[i][j] = CONTROL_STORE[index][j];
+        }
+        index++;
+    }
+    for(int i = 0; i < NUM_CONTROL_STORE_ROWS_LDST; i++) {
+        for(int j = 0; j < NUM_CONTROL_SIGNALS; j++) {
+            CONTROL_STORE_LDST[i][j] = CONTROL_STORE[index][j];
+        }
+        index++;
+    }
+    for(int i = 0; i < NUM_CONTROL_STORE_ROWS_BR; i++) {
+        for(int j = 0; j < NUM_CONTROL_SIGNALS; j++) {
+            CONTROL_STORE_BR[i][j] = CONTROL_STORE[index][j];
+        }
+        index++;
+    }
+    for(int i = 0; i < NUM_CONTROL_STORE_ROWS_ADDCONST; i++) {
+        for(int j = 0; j < NUM_CONTROL_SIGNALS; j++) {
+            CONTROL_STORE_ADDCONST[i][j] = CONTROL_STORE[index][j];
+        }
+        index++;
+    }
+    for(int i = 0; i < NUM_CONTROL_STORE_ROWS_JMP; i++) {
+        for(int j = 0; j < NUM_CONTROL_SIGNALS; j++) {
+            CONTROL_STORE_JMP[i][j] = CONTROL_STORE[index][j];
+        }
+        index++;
+    }
     printf("Loaded %d control store rows from %s\n", row, filename);
 }
 
@@ -153,17 +196,18 @@ void load_program(char *filename) {
 /*  Instruction and Data Cache Access                           */
 /***************************************************************/
 void icache_access(uint32_t addr, uint32_t *instr, int *icache_r) {
+    // could create instruction cache stalls here
     /*int miss = CYCLE_COUNT % 13 == 0;
-    if (miss) { *icache_r = 0; *instr = 0x00000013; return; } // NOP*/
+    // if (miss) { *icache_r = 0; return; }*/
     *icache_r = 1;
-    int idx = addr >> 2;
-    *instr = (MEMORY[idx][3] << 24) | (MEMORY[idx][2] << 16) | (MEMORY[idx][1] << 8) | MEMORY[idx][0];
+    int index = addr >> 2;
+    *instr = (MEMORY[index][3] << 24) | (MEMORY[index][2] << 16) | (MEMORY[index][1] << 8) | MEMORY[index][0];
 }
 
-void dcache_access(uint32_t addr, uint32_t *read_word, uint32_t write_word,
-                   int *dcache_r, int ldst_op) {
-    /*int miss = CYCLE_COUNT % 11 == 0;
-    if (miss) { *dcache_r = 0; return; }*/
+void dcache_access(uint32_t addr, uint32_t *read_word, uint32_t write_word, int *dcache_r, int ldst_op) {
+    // could create memory stalls here
+    /*int miss = CYCLE_COUNT % 13 == 0;
+    // if (miss) { *dcache_r = 0; return; }*/
     *dcache_r = 1;
     int index = addr >> 2;
     int remainder = addr % 4;
@@ -179,7 +223,7 @@ void dcache_access(uint32_t addr, uint32_t *read_word, uint32_t write_word,
     else if(ldst_op == 6) {
         if(remainder == 0) {MEMORY[index][0] = write_word & 0x000000FF; MEMORY[index][1] = (write_word & 0x0000FF00) >> 8;}
         else if(remainder == 1) {MEMORY[index][1] = write_word & 0x000000FF; MEMORY[index][2] = (write_word & 0x0000FF00) >> 8;}
-        else if(remainder == 2) {MEMORY[index][3] = write_word & 0x000000FF; MEMORY[index][4] = (write_word & 0x0000FF00) >> 8;}
+        else if(remainder == 2) {MEMORY[index][2] = write_word & 0x000000FF; MEMORY[index][3] = (write_word & 0x0000FF00) >> 8;}
         else if(remainder == 3) {MEMORY[index][3] = write_word & 0x000000FF; MEMORY[index+1][0] = (write_word & 0x0000FF00) >> 8;}
     }
     else if(ldst_op == 7) {
@@ -348,6 +392,7 @@ void toBinaryStringUnsigned(int number, int bits, char* binary) {
       return;
    }
 }
+
 // converts integer to signed binary string
 void toBinaryStringSigned(int number, int bits, char* binary) {
    binary[bits] = '\0';
@@ -386,6 +431,7 @@ void toBinaryStringSigned(int number, int bits, char* binary) {
       return;
    }
 }
+
 // converts signed binary string to integer
 int toIntegerFromSignedString(char* binary, int bits) {
    int returninteger = 0;
@@ -406,27 +452,23 @@ int toIntegerFromSignedString(char* binary, int bits) {
    }
    return returninteger;
 }
-// converts unsigned binary string to integer
-int toIntegerFromUnsignedString(char* binary, int bits) {
-   int returninteger = 0;
-   for(int i = 0; i < bits; i++) {
-      if(binary[i] == '1') {
-         returninteger = returninteger + pow(2, bits - 1 - i);
-      }
-   }
-   return returninteger;
-}
 
-// not sure if this is right
-int sext(int num, int signbit){
-    if ((num >> (signbit)) & 0x01){
-       int mask = (0x0FFFF) - ((0x010 << signbit) - 0x01);
-       return(num | mask);
-    } else if (!((num >> (signbit)) & 0x01)){
-       int mask = (0x010 << signbit) - 0x01;
-       return(num & mask);
+uint32_t sext(uint32_t input, uint32_t firstemptydigit) {
+    uint32_t base = 0xFFFFFFFF;
+    base = base << firstemptydigit; 
+    base = 0xFFFFFFFF - base;
+    input = input & base;
+    uint32_t index = 0x00000001 << (firstemptydigit - 1);
+    uint32_t value = input & index;
+    if (value == 0) {return input;}
+    else {
+        for(int i = firstemptydigit; i < 32; i++) {
+            index = index << 1;
+            input = input + index;
+        }
+        return input;
     }
- }
+}
 
 /* ========== Stage implementations ========== */
 
@@ -439,24 +481,26 @@ int v_wb_ld_reg,
 /* Pipeline Stage: WB                                           */
 /***************************************************************/
 void WB_stage(void) {
+
     v_wb_ld_reg = PS.MEM_CS[CS_LDREG] & PS.MEM_V;
     wb_dr = PS.MEM_RD;
 
     int wb_mux = (PS.MEM_CS[CS_WB_MUX1] << 1) + PS.MEM_CS[CS_WB_MUX0];
     switch (wb_mux) {
         case 0: // PC + 4
-            wb_data = PS.MEM_PC + 4;
+            wb_data = Low32bits(PS.MEM_PC + 4);
             break;
         case 1: // Memory result
-            wb_data = PS.MEM_DATA;
+            wb_data = Low32bits(PS.MEM_DATA);
             break;
         case 2: // ALU result
-            wb_data = PS.MEM_ALU_RESULT;
+            wb_data = Low32bits(PS.MEM_ALU_RESULT);
             break;
         default:
             wb_data = 0;
             break;
     }
+
 }
 
 /* Signals generated by MEM stage and needed by previous stages */
@@ -472,23 +516,21 @@ void MEM_stage(void) {
     mem_dr = PS.EX_RD;
     
     uint32_t IR = PS.EX_IR;
-    int dcache_r = 0; uint32_t mem_data = 0;
+    int dcache_r = 0; 
+    uint32_t mem_data = 0;
     int ldst_op = (PS.EX_CS[CS_LDST_OP2] << 2) + (PS.MEM_CS[CS_LDST_OP1] << 1) + PS.MEM_CS[CS_LDST_OP0];
 
     if ((PS.EX_V == 1) && (PS.EX_CS[CS_LDST] == 1)) {dcache_access(PS.EX_TA, &mem_data, PS.EX_ALU_RESULT, &dcache_r, ldst_op);}
     if ((PS.EX_V == 1) && (PS.EX_CS[CS_LDST] == 1) && (dcache_r == 0)) {mem_stall = 1;}
     if ((PS.EX_V == 0) || (PS.EX_CS[CS_LDST] == 0) || (dcache_r == 1)) {mem_stall = 0;}
 
-    char data[64] = "0000000000000000000000000000000000000000000000000000000000000000";
     if(ldst_op == 0) {
         mem_data = mem_data & 0x000000FF;
-        toBinaryStringSigned(mem_data, 32, data); 
-        mem_data = toIntegerFromUnsignedString(data, 32);
+        if((mem_data & 0x00000080) > 0) {mem_data = mem_data + 0xFFFFFF00;}
     }
     else if(ldst_op == 1) {
         mem_data = mem_data & 0x0000FFFF;
-        toBinaryStringSigned(mem_data, 32, data); 
-        mem_data = toIntegerFromUnsignedString(data, 32);
+        if((mem_data & 0x00008000) > 0) {mem_data = mem_data + 0xFFFF0000;}
     }
     else if(ldst_op == 3) {
         mem_data = mem_data & 0x000000FF;
@@ -499,12 +541,12 @@ void MEM_stage(void) {
 
     NEW_PS.MEM_ALU_RESULT = PS.EX_ALU_RESULT;
     NEW_PS.MEM_IR = IR;
-    NEW_PS.MEM_DATA = mem_data;
+    NEW_PS.MEM_DATA = Low32bits(mem_data);
     NEW_PS.MEM_PC = PS.EX_PC;
     NEW_PS.MEM_RD = PS.EX_RD;
     memcpy(NEW_PS.MEM_CS, PS.EX_CS, sizeof(int) * NUM_CONTROL_SIGNALS);
-    if((PS.EX_V == 1) && (mem_stall == 0)) NEW_PS.MEM_V = 1;
-    else NEW_PS.MEM_V = 0;
+    if((PS.EX_V == 1) && (mem_stall == 0)) {NEW_PS.MEM_V = 1;}
+    else {NEW_PS.MEM_V = 0;}
 }
 
 /* Signals generated by EX stage and needed by previous stages */
@@ -529,98 +571,59 @@ void EX_stage(void) {
                  PS.ID_CS[CS_ALU_OP0];
     int comp_op = (PS.ID_CS[CS_COMP_OP2] << 2) | (PS.ID_CS[CS_COMP_OP1] << 1) |
                  PS.ID_CS[CS_COMP_OP0];
-    uint32_t srcA = PS.ID_RS1;
-    uint32_t srcB = (CONTROL_STORE[CS_ALU_MUX]) ? PS.ID_IMM : sext(PS.ID_RS2, 12);
-    uint32_t opcode = IR & ((1 << 7) - 1);
+    uint32_t srcA = Low32bits(PS.ID_RS1);
+    uint32_t srcB = Low32bits((PS.ID_CS[CS_ALU_MUX]) ? PS.ID_IMM : PS.ID_RS2);
 
-
-        // case 51: //x33
-        //     srcB = PS.ID_IMM;
-        // case 19: //x13
-        //     switch (alu_op) {
-        //     // most of the current cases are not right
-        //     // someone needs to do all of the cases based on ALU instructions
-        //     // should end up with cases 0 through 31
-        //     // note that some of the operations are signed, some of the operations are unsigned
-        //     // the register values are unsigned 32 bit integers, so you're going to have to manipulate values accordingly
-        //     case 0: 
-        //         // if (IR & (1 << 30)){result = srcA + srcB;}
-        //         // else {result = srcA - srcB;}
-        //         // break;
-        //         if (IR & (1 << 30)){result = srcA - srcB;}
-        //         else {result = srcA + srcB;}
-        //         break; 
-        //     case 1: result = srcA << srcB; break;
-        //     case 2: result = (int32_t) srcA < (int32_t) srcB; break;
-        //     case 3: result = srcA < srcB; break;
-        //     case 4: result = srcA ^ srcB; break;
-        //     case 5: 
-        //         if (IR & (1 << 30)) {result = (int32_t) srcA >> srcB;} //arith
-        //             else {result = srcA >> srcB;} //logical
-        //             break;
-        //     case 6: result = srcA | srcB; break;
-        //     case 7: result = srcA & srcB; break;
-        //     default: result = 0; break;
-        //     ex_stall = 0;
-
-        // }
-
-
+    // ALU
     switch (alu_op) { 
-        case 0: result = srcA + srcB;
-        case 1: result = srcA - srcB;
-        case 4: result = srcA >> (srcB & 0x1F);
-        case 5: result = (int32_t)srcA >> (srcB & 0x1F);
-        case 6: result = srcA << (srcB & 0x1F);
-        case 8:
-            if ((srcA[31] ^ srcB[31]) & srcA[31]) {result = 0x01; }
-            else if ((int32_t)(srcA - srcB)[31]){ result = 0x01; }
-            else { result = 0x00; }
-        case 9: result = (srcA < srcB) ? 0x01 : 0x00;
-        case 12: result = srcA | srcB;
-        case 13: result = srcA & srcB;
-        case 14: result = srcA ^ (srcB & 0x0FFFF);
-        case 15: result = (int32_t)srcA * (int32_t)srcB;
-        case 16: result = ((int32_t)srcA * (int32_t)srcB) >> 32;
-        case 17: result = ((int32_t)srcA * (uint32_t)srcB) >> 32;
-        case 18: result = ((uint32_t)srcA * (uint32_t)srcB) >> 32;
-        case 19: result = ((int32_t)srcA/(int32_t)srcB);
-        case 20: result = ((uint32_t)srcA/(uint32_t)srcB);
-        case 21: result = ((int32_t)srcA%(int32_t)srcB);
-        case 22: result = ((uint32_t)srcA%(uint32_t)srcB);
-        case 31: result = srcB << 12;
+        case 0: result = srcA + srcB; // ADD/ADDI
+        case 1: result = srcA - srcB; // SUB
+        case 4: result = srcA >> (srcB & 0x1F); // SRL/SRLI
+        case 5: result = (int32_t)srcA >> (srcB & 0x1F); // SRA/SRAI
+        case 6: result = srcA << (srcB & 0x1F); // SLL/SLLI
+        case 8: result - ((int32_t) srcA < (int32_t) srcB); // SLT/SLTI
+        case 9: result = ((uint32_t) srcA < (uint32_t) srcB); // SLTU/SLTUI
+        case 12: result = srcA | srcB; // OR/ORI
+        case 13: result = srcA & srcB; // AND/ANDI
+        case 14: result = srcA ^ srcB; // XOR/XORI
+        case 16: result = (int32_t)srcA * (int32_t)srcB; // MUL
+        case 17: result = ((int32_t)srcA * (int32_t)srcB) >> 32; // MULH
+        case 18: result = ((int32_t)srcA * (uint32_t)srcB) >> 32; // MULHSU
+        case 19: result = ((uint32_t)srcA * (uint32_t)srcB) >> 32; // MULHU
+        case 20: result = ((int32_t)srcA/(int32_t)srcB); // DIV
+        case 21: result = ((uint32_t)srcA/(uint32_t)srcB); // DIVU
+        case 22: result = ((int32_t)srcA%(int32_t)srcB); // REM
+        case 23: result = ((uint32_t)srcA%(uint32_t)srcB); // REMU
+        case 31: result = srcB; // PASS THROUGH FOR STORES, LUI
         default: result = 0x0;
     }
+    result = Low32bits(result);
     ex_stall = 0;
-    result = result & 0x0FFFF;
     
-    //BRANCH
+    // COMPARATOR
     switch (comp_op) { 
-        // Done - cases 0 and 7 are good someone needs to do cases 1 through 6 based on branch instructions comp should equal one if branch is being taken, zero is branch is not being taken note that some of the branch comparisons are signed, some of the branch comparisons are unsigned the register values are unsigned 32 bit integers, so you're going to have to manipulate values accordingly
         case 0: comp_result = 0;
-        case 1: comp_result = ((int32_t) srcA == (int32_t) PS.ID_RS2); 
-        case 2: comp_result = ((int32_t) srcA != (int32_t) PS.ID_RS2);
-        case 3: comp_result = ((int32_t) srcA <  (int32_t) PS.ID_RS2);
-        case 4: comp_result = ((int32_t) srcA >= (int32_t) PS.ID_RS2);
-        case 5: comp_result = ((uint32_t) srcA <  (uint32_t) PS.ID_RS2);
-        case 6: comp_result = ((uint32_t) srcA >= (uint32_t) PS.ID_RS2);
+        case 1: comp_result = ((int32_t) srcA == (int32_t) srcB); 
+        case 2: comp_result = ((int32_t) srcA != (int32_t) srcB);
+        case 3: comp_result = ((int32_t) srcA < (int32_t) srcB);
+        case 4: comp_result = ((int32_t) srcA >= (int32_t) srcB);
+        case 5: comp_result = ((uint32_t) srcA < (uint32_t) srcB);
+        case 6: comp_result = ((uint32_t) srcA >= (uint32_t) srcB);
         default: comp_result = 1;
     }
 
-    //JMP Stuff
-    ta = PS.ID_CS[CS_TA_MUX] ? PS.ID_PC : PS.ID_RS1;
-    ta = (CONTROL_STORE[CS_TA_ADDR]) ? ta + (PS.ID_IMM << 12) : ta + PS.ID_IMM; // also does AUIPC
+    // TA ADDER
+    ta = PS.ID_CS[CS_TA_MUX] ? PS.ID_RS1 : PS.ID_PC;
+    ta = Low32bits(ta + PS.ID_IMM); 
     jmp_pc = ta;
 
-    
-
-    jmp_pcmux = (comp_result & PS.ID_V) & PS.ID_CS[JMP_SIG];
+    jmp_pcmux = comp_result & PS.ID_V;
 
     int LD_MEM = 0;
     if(mem_stall == 0) {LD_MEM = 1;}
 
     if(LD_MEM) {
-        NEW_PS.EX_ALU_RESULT = PS.ID_CS[CS_ALU_RESULT_MUX] ? result : ta;
+        NEW_PS.EX_ALU_RESULT = PS.ID_CS[CS_ALU_RESULT_MUX] ? ta: result;
         NEW_PS.EX_TA = ta;
         NEW_PS.EX_PC = PS.ID_PC;
         NEW_PS.EX_IR = IR;
@@ -637,71 +640,77 @@ void EX_stage(void) {
 void ID_stage(void) {
 
     uint32_t IR = PS.IF_IR;
-    //SUPPOSE WE HAVE WAY TO ACCESS EACH CONTROL STORE TABLE
+    uint32_t IR30 = (IR & 0x40000000) >> 30;
+    uint32_t IR14 = (IR & 0x00004000) >> 14;
+    uint32_t IR13 = (IR & 0x40002000) >> 13;
+    uint32_t IR12 = (IR & 0x40001000) >> 12;
+    uint32_t IR5 = (IR & 0x40000020) >> 5;
+    uint32_t IR3 = (IR & 0x40000008) >> 3;
+
+    uint32_t ALU_Row =(16*IR30) + (8*IR5) + (4*IR14) + (2*IR13) + IR12;
+    uint32_t MULT_Row =(4*IR14) + (2*IR13) + IR12;
+    uint32_t LDST_Row =(8*IR5) + (4*IR14) + (2*IR13) + IR12;
+    uint32_t BR_Row =(4*IR14) + (2*IR13) + IR12;
+    uint32_t ADDCONST_Row =IR5;
+    uint32_t JMP_Row = IR3;
+
+    uint32_t Temp_CS[NUM_CONTROL_SIGNALS];
 
     if ((IR >> 0x02) & 0x01) {
         if ((IR >> 0x04) & 0x01) {
-            CONTROL_STORE = CONTROL_STORE_ADDCONST;
-            row = (IR >> 5) & 0x01;
+            memcpy(Temp_CS, CONTROL_STORE_ADDCONST[ADDCONST_Row], sizeof(int) * NUM_CONTROL_SIGNALS);
         } else {
-            CONTROL_STORE = CONTROL_STORE_JMP;
-            row = (IR >> 3) & 0x01;
-        
+            memcpy(Temp_CS, CONTROL_STORE_JMP[JMP_Row], sizeof(int) * NUM_CONTROL_SIGNALS);
         }
-    } else {
+    } 
+    else {
         if (((IR >> 0x02) & 0x01) & ((IR >> 0x03) & 0x01) & ((IR >> 0x04) & 0x01)) {
             if ((IR >> 0x19) & 0x01){
-                CONTROL_STORE = CONTROL_STORE_MULT;
-                row = (((IR >> 14) & 0x01) << 0x02) + (((IR >> 13) & 0x01) << 0x01) + ((IR >> 12) & 0x01);
+                memcpy(Temp_CS, CONTROL_STORE_MULT[MULT_Row], sizeof(int) * NUM_CONTROL_SIGNALS);
             } else {
-                CONTROL_STORE = CONTROL_STORE_ALU;
-                row = (((IR >> 30) & 0x01) << 4) + (((IR >> 5) & 0x01) << 3) + (((IR >> 14) & 0x01) << 2) + (((IR >> 13) & 0x01) << 1) + ((IR >> 12) & 0x01);
+                memcpy(Temp_CS, CONTROL_STORE_ALU[ALU_Row], sizeof(int) * NUM_CONTROL_SIGNALS); 
             }
-        } else {
+        } 
+        else {
             if ((IR >> 0x06) & 0x01) {
-                CONTROL_STORE = CONTROL_STORE_BR;
-                row = (((IR >> 14) & 0x01) << 0x02) + (((IR >> 13) & 0x01) << 0x01) + ((IR >> 12) & 0x01);
+                memcpy(Temp_CS, CONTROL_STORE_BR[BR_Row], sizeof(int) * NUM_CONTROL_SIGNALS);
             } else {
-                CONTROL_STORE = CONTROL_STORE_LDST;
-                row = (((IR >> 5) & 0x01) << 3) + (((IR >> 14) & 0x01) << 2) + (((IR >> 13) & 0x01) << 1) + ((IR >> 12) & 0x01);
+                memcpy(Temp_CS, CONTROL_STORE_LDST[LDST_Row], sizeof(int) * NUM_CONTROL_SIGNALS);
             }
         }
     }
     
-    int opcode = IR & 0x07F;
-    int func3 = (IR >> 12) & 0x07;
-    int bit30 = (IR >> 30) & 0x01;
-    id_br_stall = CONTROL_STORE[row][CS_BR_STALL] & PS.IF_V;
+    id_br_stall = Temp_CS[CS_BR_STALL] & PS.IF_V;
 
     int rs1 = (IR >> 15) & 0x1F;
     int rs2 = (IR >> 20) & 0x1F;
     int rd  = (IR >> 7) & 0x1F;
 
     uint32_t imm = 0;
-    int iv = (CONTROL_STORE[row][CS_IV2] << 2) |
-             (CONTROL_STORE[row][CS_IV1] << 1) |
-             CONTROL_STORE[row][CS_IV0];
-
-    switch (iv) { // someone needs to go through these, some of them aren't right
+    int iv = (Temp_CS[CS_IV2] << 2) | (Temp_CS[CS_IV1] << 1) | Temp_CS[CS_IV0];
+    
+    switch (iv) {
         case 1: imm = sext((IR >> 20), 12); break;                  // I-type 
         case 2: imm = sext(((IR >> 25) << 5) | ((IR >> 7) & 0x1F), 12); break; // S-type 
-        case 3: imm = sext(((IR >> 31) << 12) | (((IR >> 7) & 1) << 11)
+        case 3: imm = sext(((IR >> 31) << 12) | (((IR >> 7) & 0x01) << 11)
                         | (((IR >> 25) & 0x3F) << 5) | (((IR >> 8) & 0xF) << 1), 13); break; // B-type 
         case 4: imm = (IR & 0xFFFFF000); break;                     // U-type 
-        case 5: imm = sext(((IR >> 12) & 0xFF) << 12, 21); break;   // J-type simplified 
+        case 5: imm = sext(((IR >> 31) << 20) | (((IR >> 12) & 0xFF) << 12) 
+                        | (((IR >> 20) & 0x01) << 11) | (((IR >> 21) & 0x3FF) << 1), 21); break;  // J-type 
     }
+    imm = Low32bits(imm);
 
-    if (v_wb_ld_reg) REGS[wb_dr] = wb_data;
+    if (v_wb_ld_reg) {REGS[wb_dr] = wb_data;}
 
     if(PS.IF_V == 0) {dep_stall = 0;}
     if(PS.IF_V == 1) {
         dep_stall = 0;
-        if((CONTROL_STORE[row][CS_SR1_NEEDED] == 1) && (v_wb_ld_reg == 1) && (rs1 == wb_dr)) {dep_stall = 1;}
-        if((CONTROL_STORE[row][CS_SR1_NEEDED] == 1) && (v_mem_ld_reg == 1) && (rs1 == mem_dr)) {dep_stall = 1;}
-        if((CONTROL_STORE[row][CS_SR1_NEEDED] == 1) && (v_ex_ld_reg == 1) && (rs1 == ex_dr)) {dep_stall = 1;}
-        if((CONTROL_STORE[row][CS_SR2_NEEDED] == 1) && (v_wb_ld_reg == 1) && (rs2 == wb_dr)) {dep_stall = 1;}
-        if((CONTROL_STORE[row][CS_SR2_NEEDED] == 1) && (v_mem_ld_reg == 1) && (rs2 == mem_dr)) {dep_stall = 1;}
-        if((CONTROL_STORE[row][CS_SR2_NEEDED] == 1) && (v_ex_ld_reg == 1) && (rs2 == ex_dr)) {dep_stall = 1;}
+        if((Temp_CS[CS_SR1_NEEDED] == 1) && (v_wb_ld_reg == 1) && (rs1 == wb_dr)) {dep_stall = 1;}
+        if((Temp_CS[CS_SR1_NEEDED] == 1) && (v_mem_ld_reg == 1) && (rs1 == mem_dr)) {dep_stall = 1;}
+        if((Temp_CS[CS_SR1_NEEDED] == 1) && (v_ex_ld_reg == 1) && (rs1 == ex_dr)) {dep_stall = 1;}
+        if((Temp_CS[CS_SR2_NEEDED] == 1) && (v_wb_ld_reg == 1) && (rs2 == wb_dr)) {dep_stall = 1;}
+        if((Temp_CS[CS_SR2_NEEDED] == 1) && (v_mem_ld_reg == 1) && (rs2 == mem_dr)) {dep_stall = 1;}
+        if((Temp_CS[CS_SR2_NEEDED] == 1) && (v_ex_ld_reg == 1) && (rs2 == ex_dr)) {dep_stall = 1;}
     }
 
     int LD_EX = 1;
@@ -715,7 +724,7 @@ void ID_stage(void) {
         NEW_PS.ID_RS2 = REGS[rs2];
         NEW_PS.ID_IMM = imm;
         NEW_PS.ID_RD = rd;
-        memcpy(NEW_PS.ID_CS, CONTROL_STORE[row], sizeof(int) * NUM_CONTROL_SIGNALS);
+        memcpy(NEW_PS.ID_CS, Temp_CS, sizeof(int) * NUM_CONTROL_SIGNALS);
         NEW_PS.ID_V = 0;
         if((PS.IF_V == 1) && (dep_stall == 0)) {NEW_PS.ID_V = 1;}
     }
@@ -727,7 +736,8 @@ void ID_stage(void) {
 /***************************************************************/
 void IF_stage(void) {
     
-    int icache_r; uint32_t instr;
+    int icache_r = 0;
+    uint32_t instr = 0;
     icache_access(PC, &instr, &icache_r);
     // assuming that instruction cache will never stall
 
@@ -738,7 +748,7 @@ void IF_stage(void) {
 
     if(LD_ID) {
         NEW_PS.IF_PC = PC;
-        NEW_PS.IF_IR = instr;
+        NEW_PS.IF_IR = Low32bits(instr);
         NEW_PS.IF_V = 0;
         if((id_br_stall == 0) && (ex_br_stall == 0)) {NEW_PS.IF_V = 1;}
     }
@@ -748,8 +758,8 @@ void IF_stage(void) {
     if(jmp_pcmux == 1) {ld_pc = 1;}
 
     if(ld_pc == 1) {
-        if(jmp_pcmux == 0) {PC = PC + 4;}
-        else if(jmp_pcmux == 1) {PC = jmp_pc;}
+        if(jmp_pcmux == 0) {PC = Low32bits(PC + 4);}
+        else if(jmp_pcmux == 1) {PC = Low32bits(jmp_pc);}
     }
     
 }
