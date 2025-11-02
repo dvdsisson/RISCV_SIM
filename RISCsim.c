@@ -581,7 +581,7 @@ void EX_stage(void) {
         case 4: result = srcA >> (srcB & 0x1F); // SRL/SRLI
         case 5: result = (int32_t)srcA >> (srcB & 0x1F); // SRA/SRAI
         case 6: result = srcA << (srcB & 0x1F); // SLL/SLLI
-        case 8: result - ((int32_t) srcA < (int32_t) srcB); // SLT/SLTI
+        case 8: result = ((int32_t) srcA < (int32_t) srcB); // SLT/SLTI
         case 9: result = ((uint32_t) srcA < (uint32_t) srcB); // SLTU/SLTUI
         case 12: result = srcA | srcB; // OR/ORI
         case 13: result = srcA & srcB; // AND/ANDI
@@ -603,12 +603,12 @@ void EX_stage(void) {
     // COMPARATOR
     switch (comp_op) { 
         case 0: comp_result = 0;
-        case 1: comp_result = ((int32_t) srcA == (int32_t) srcB); 
-        case 2: comp_result = ((int32_t) srcA != (int32_t) srcB);
-        case 3: comp_result = ((int32_t) srcA < (int32_t) srcB);
-        case 4: comp_result = ((int32_t) srcA >= (int32_t) srcB);
-        case 5: comp_result = ((uint32_t) srcA < (uint32_t) srcB);
-        case 6: comp_result = ((uint32_t) srcA >= (uint32_t) srcB);
+        case 1: comp_result = ((int32_t) srcA == (int32_t) PS.ID_RS2); 
+        case 2: comp_result = ((int32_t) srcA != (int32_t) PS.ID_RS2);
+        case 3: comp_result = ((int32_t) srcA < (int32_t) PS.ID_RS2);
+        case 4: comp_result = ((int32_t) srcA >= (int32_t) PS.ID_RS2);
+        case 5: comp_result = ((uint32_t) srcA < (uint32_t) PS.ID_RS2);
+        case 6: comp_result = ((uint32_t) srcA >= (uint32_t) PS.ID_RS2);
         default: comp_result = 1;
     }
 
