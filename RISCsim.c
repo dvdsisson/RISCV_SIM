@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <math.h>
 
 /***************************************************************/
 /*  Global definitions                                          */
@@ -18,7 +19,7 @@
 #define NUM_CONTROL_STORE_ROWS_ADDCONST 2
 #define NUM_CONTROL_STORE_ROWS_JMP      2
 #define NUM_CONTROL_SIGNALS      24
-#define WORDS_IN_MEM             0x100000  //4 MB
+#define WORDS_IN_MEM             0x2000  //32 KB
 
 /***************************************************************/
 /*  Architectural state                                         */
@@ -45,7 +46,7 @@ int CONTROL_STORE_MULT[NUM_CONTROL_STORE_ROWS_MULT][NUM_CONTROL_SIGNALS];
 int CONTROL_STORE_LDST[NUM_CONTROL_STORE_ROWS_LDST][NUM_CONTROL_SIGNALS];
 int CONTROL_STORE_BR[NUM_CONTROL_STORE_ROWS_BR][NUM_CONTROL_SIGNALS];
 int CONTROL_STORE_ADDCONST[NUM_CONTROL_STORE_ROWS_ADDCONST][NUM_CONTROL_SIGNALS];
-int CONTROL_STORE_JMP[2][NUM_CONTROL_STORE_ROWS_JMP];
+int CONTROL_STORE_JMP[NUM_CONTROL_STORE_ROWS_JMP][NUM_CONTROL_SIGNALS];
 uint8_t MEMORY[WORDS_IN_MEM][4];   /* byte-addressable */
 
 /***************************************************************/
@@ -106,71 +107,85 @@ void WB_stage(void);
 /*  Control Store Loader                                        */
 /***************************************************************/
 void init_control_store(char *filename) {
+
     FILE *fp = fopen(filename, "r");
     if (!fp) {
         printf("ERROR: Cannot open control store file %s\n", filename);
         exit(1);
     }
-    char line[512];
-    int row = 0;
-    while (fgets(line, sizeof(line), fp) && row < NUM_CONTROL_STORE_ROWS) {
-        char *token = strtok(line, ",");
-        int col = 0;
-        while (token && col < NUM_CONTROL_SIGNALS) {
-            CONTROL_STORE[row][col++] = atoi(token);
-            token = strtok(NULL, ",");
+
+    char buffer[256];
+
+    int r = 0; 
+    while (fgets(buffer, sizeof(buffer), fp)){
+        for (int c = 0; c < NUM_CONTROL_SIGNALS; c++){
+            if (buffer[c] == '1'){
+                CONTROL_STORE[r][c] = 0x01;
+            } else {
+                CONTROL_STORE[r][c] = 0x00;
+            }
         }
-        row++;
+        r++;
     }
+
     fclose(fp);
+
     int index = 0;
     for(int i = 0; i < NUM_CONTROL_STORE_ROWS_ALU; i++) {
         for(int j = 0; j < NUM_CONTROL_SIGNALS; j++) {
             CONTROL_STORE_ALU[i][j] = CONTROL_STORE[index][j];
+            //printf("%d", CONTROL_STORE[index][j]);
         }
         index++;
+        //printf("\n");
     }
     for(int i = 0; i < NUM_CONTROL_STORE_ROWS_MULT; i++) {
         for(int j = 0; j < NUM_CONTROL_SIGNALS; j++) {
             CONTROL_STORE_MULT[i][j] = CONTROL_STORE[index][j];
+            //printf("%d", CONTROL_STORE[index][j]);
         }
         index++;
+        //printf("\n");
     }
     for(int i = 0; i < NUM_CONTROL_STORE_ROWS_LDST; i++) {
         for(int j = 0; j < NUM_CONTROL_SIGNALS; j++) {
             CONTROL_STORE_LDST[i][j] = CONTROL_STORE[index][j];
+            //printf("%d", CONTROL_STORE[index][j]);
         }
         index++;
+        //printf("\n");
     }
     for(int i = 0; i < NUM_CONTROL_STORE_ROWS_BR; i++) {
         for(int j = 0; j < NUM_CONTROL_SIGNALS; j++) {
             CONTROL_STORE_BR[i][j] = CONTROL_STORE[index][j];
+            //printf("%d", CONTROL_STORE[index][j]);
         }
         index++;
+        //printf("\n");
     }
     for(int i = 0; i < NUM_CONTROL_STORE_ROWS_ADDCONST; i++) {
         for(int j = 0; j < NUM_CONTROL_SIGNALS; j++) {
             CONTROL_STORE_ADDCONST[i][j] = CONTROL_STORE[index][j];
+            //printf("%d", CONTROL_STORE[index][j]);
         }
         index++;
+        //printf("\n");
     }
     for(int i = 0; i < NUM_CONTROL_STORE_ROWS_JMP; i++) {
         for(int j = 0; j < NUM_CONTROL_SIGNALS; j++) {
             CONTROL_STORE_JMP[i][j] = CONTROL_STORE[index][j];
+            //printf("%d", CONTROL_STORE[index][j]);
         }
         index++;
+        //printf("\n");
     }
-    printf("Loaded %d control store rows from %s\n", row, filename);
 }
 
 /***************************************************************/
 /*  Memory helpers and I/O functions                            */
 /***************************************************************/
-void init_memory(void) {
-    memset(MEMORY, 0, sizeof(MEMORY));
-}
 
-void load_program(char *filename) {
+/*void load_program(char *filename) {
     FILE *prog = fopen(filename, "r");
     if (!prog) {
         printf("Error: Can't open program file %s\n", filename);
@@ -190,7 +205,7 @@ void load_program(char *filename) {
     fclose(prog);
     PC = 0x0;
     printf("Program loaded, start address 0x%08x\n", PC);
-}
+}*/
 
 /***************************************************************/
 /*  Instruction and Data Cache Access                           */
@@ -338,7 +353,7 @@ void go() {
 
 /*  Command interface (get_command)                              */
 /***************************************************************/
-void get_command(FILE *dumpsim_file) {
+/*void get_command(FILE *dumpsim_file) {
     char buffer[20]; int start, stop, cycles;
     printf("RISC-V-SIM> ");
     scanf("%s", buffer);
@@ -353,8 +368,62 @@ void get_command(FILE *dumpsim_file) {
         break;
     default: printf("Invalid command\n"); break;
     }
+}*/
+
+void init_state() {
+    memset(&PS,0,sizeof(PipeState));
+    memset(&NEW_PS,0,sizeof(PipeState));
+    for (int i=0;i<32;i++) REGS[i]=0;
+    RUN_BIT = TRUE;
+    CYCLE_COUNT = 0;
+    dep_stall = 0; ex_stall = 0; mem_stall = 0; id_br_stall = 0; ex_br_stall = 0; icache_r = 1; dcache_r = 1;
 }
 
+void init_memory(void) {
+    memset(MEMORY, 0, sizeof(MEMORY));
+}
+
+void load_program(const char *fname) {
+    FILE *f = fopen(fname,"r");
+    if (!f) { printf("Can't open program file %s\n", fname); exit(1); }
+    uint32_t word;
+    if (fscanf(f,"%x\n",&word) == EOF) { fclose(f); return; }
+    PC = word;
+    uint32_t addr = PC;
+    addr = addr >> 2;
+    while (fscanf(f,"%x\n",&word) != EOF) {
+        if (addr >= WORDS_IN_MEM) break;
+        MEMORY[addr][0]   = word & 0xFF;
+        MEMORY[addr][1] = (word>>8) & 0xFF;
+        MEMORY[addr][2] = (word>>16) & 0xFF;
+        MEMORY[addr][3] = (word>>24) & 0xFF;
+        addr += 1;
+    }
+    fclose(f);
+    printf("Loaded program into memory starting at 0x%08x\n", PC);
+}
+
+/* get_command function (interactive) */
+void get_command(FILE * dumpsim_file) {
+    char buffer[32];
+    printf("RV32-SIM>");
+    if (scanf("%s", buffer) == EOF) exit(0);
+
+    if (buffer[0]=='q' || buffer[0]=='Q') { printf("Bye.\n"); exit(0); }
+    else if (buffer[0]=='?') { help(); }
+    else if (buffer[0]=='g' || buffer[0]=='G') { go(); }
+    else if (buffer[0]=='r' || buffer[0]=='R') {
+        if (buffer[1] == 'd' || buffer[1]=='D') rdump(dumpsim_file);
+        else {
+            int n=1;
+            if (scanf("%d", &n) == 1) run_cycles(n);
+        }
+    } else if (buffer[0]=='m' || buffer[0]=='M') {
+        uint32_t s,e; if (scanf("%x %x",&s,&e)==2) mdump(dumpsim_file,s,e);
+    } else if (buffer[0]=='i' || buffer[0]=='I') {
+        idump(dumpsim_file);
+    } else { printf("Unknown command\n"); }
+}
 
 /*  Initialization and Main     
 /***************************************************************/
@@ -496,7 +565,7 @@ void WB_stage(void) {
         case 2: // ALU result
             wb_data = Low32bits(PS.MEM_ALU_RESULT);
             break;
-        default:
+        case 3:
             wb_data = 0;
             break;
     }
@@ -587,19 +656,18 @@ void EX_stage(void) {
         case 13: result = srcA & srcB; // AND/ANDI
         case 14: result = srcA ^ srcB; // XOR/XORI
         case 16: result = (int32_t)srcA * (int32_t)srcB; // MUL
-        case 17: result = ((int32_t)srcA * (int32_t)srcB) >> 32; // MULH
-        case 18: result = ((int32_t)srcA * (uint32_t)srcB) >> 32; // MULHSU
-        case 19: result = ((uint32_t)srcA * (uint32_t)srcB) >> 32; // MULHU
-        case 20: result = ((int32_t)srcA/(int32_t)srcB); // DIV
-        case 21: result = ((uint32_t)srcA/(uint32_t)srcB); // DIVU
-        case 22: result = ((int32_t)srcA%(int32_t)srcB); // REM
-        case 23: result = ((uint32_t)srcA%(uint32_t)srcB); // REMU
+        case 17: result = (int64_t)((int32_t)srcA * (int32_t)srcB) >> 32; // MULH
+        case 18: result = (int64_t)((int32_t)srcA * (uint32_t)srcB) >> 32; // MULHSU
+        case 19: result = (uint64_t)((uint32_t)srcA * (uint32_t)srcB) >> 32; // MULHU
+        case 20: if(srcB != 0) {result = ((int32_t)srcA/(int32_t)srcB);} // DIV
+        case 21: if(srcB != 0) {result = ((uint32_t)srcA/(uint32_t)srcB);} // DIVU
+        case 22: if(srcB != 0) {result = ((int32_t)srcA%(int32_t)srcB);} // REM
+        case 23: if(srcB != 0) {result = ((uint32_t)srcA%(uint32_t)srcB);} // REMU
         case 31: result = srcB; // PASS THROUGH FOR STORES, LUI
-        default: result = 0x0;
     }
     result = Low32bits(result);
     ex_stall = 0;
-    
+
     // COMPARATOR
     switch (comp_op) { 
         case 0: comp_result = 0;
@@ -609,7 +677,7 @@ void EX_stage(void) {
         case 4: comp_result = ((int32_t) srcA >= (int32_t) PS.ID_RS2);
         case 5: comp_result = ((uint32_t) srcA < (uint32_t) PS.ID_RS2);
         case 6: comp_result = ((uint32_t) srcA >= (uint32_t) PS.ID_RS2);
-        default: comp_result = 1;
+        case 7: comp_result = 1;
     }
 
     // TA ADDER
@@ -656,15 +724,15 @@ void ID_stage(void) {
 
     uint32_t Temp_CS[NUM_CONTROL_SIGNALS];
 
-    if ((IR >> 0x02) & 0x01) {
-        if ((IR >> 0x04) & 0x01) {
+    if (((IR >> 0x02) & 0x01) > 0) {
+        if (((IR >> 0x04) & 0x01) > 0) {
             memcpy(Temp_CS, CONTROL_STORE_ADDCONST[ADDCONST_Row], sizeof(int) * NUM_CONTROL_SIGNALS);
         } else {
             memcpy(Temp_CS, CONTROL_STORE_JMP[JMP_Row], sizeof(int) * NUM_CONTROL_SIGNALS);
         }
     } 
     else {
-        if (((IR >> 0x02) & 0x01) & ((IR >> 0x03) & 0x01) & ((IR >> 0x04) & 0x01)) {
+        if ((((IR >> 0x02) & 0x01) > 0) || (((IR >> 0x03) & 0x01) > 0) || (((IR >> 0x04) & 0x01) > 0)) {
             if ((IR >> 0x19) & 0x01){
                 memcpy(Temp_CS, CONTROL_STORE_MULT[MULT_Row], sizeof(int) * NUM_CONTROL_SIGNALS);
             } else {
@@ -672,7 +740,7 @@ void ID_stage(void) {
             }
         } 
         else {
-            if ((IR >> 0x06) & 0x01) {
+            if (((IR >> 0x06) & 0x01) > 0) {
                 memcpy(Temp_CS, CONTROL_STORE_BR[BR_Row], sizeof(int) * NUM_CONTROL_SIGNALS);
             } else {
                 memcpy(Temp_CS, CONTROL_STORE_LDST[LDST_Row], sizeof(int) * NUM_CONTROL_SIGNALS);
@@ -765,61 +833,6 @@ void IF_stage(void) {
 }
 
 /* ========== initialization, load program, main ========== */
-
-void init_state() {
-    memset(&PS,0,sizeof(PipeState));
-    memset(&NEW_PS,0,sizeof(PipeState));
-    for (int i=0;i<32;i++) REGS[i]=0;
-    PC = 0;
-    RUN_BIT = TRUE;
-    CYCLE_COUNT = 0;
-    dep_stall = 0; ex_stall = 0; mem_stall = 0; id_br_stall = 0; ex_br_stall = 0; icache_r = 1; dcache_r = 1;
-}
-
-void init_memory() {
-    memset(MEMORY,0,sizeof(MEMORY));
-}
-
-void load_program(const char *fname) {
-    FILE *f = fopen(fname,"r");
-    if (!f) { printf("Can't open program file %s\n", fname); exit(1); }
-    uint32_t word;
-    if (fscanf(f,"%x\n",&word) == EOF) { fclose(f); return; }
-    PC = word;
-    uint32_t addr = PC;
-    while (fscanf(f,"%x\n",&word) != EOF) {
-        if (addr >= WORDS_IN_MEM) break;
-        MEMORY[addr][0]   = word & 0xFF;
-        MEMORY[addr][1] = (word>>8) & 0xFF;
-        MEMORY[addr][2] = (word>>16) & 0xFF;
-        MEMORY[addr][3] = (word>>24) & 0xFF;
-        addr += 1;
-    }
-    fclose(f);
-    printf("Loaded program into memory starting at 0x%08x\n", PC);
-}
-
-/* get_command function (interactive) */
-void get_command(FILE * dumpsim_file) {
-    char buffer[32];
-    printf("RV32-SIM>");
-    if (scanf("%s", buffer) == EOF) exit(0);
-
-    if (buffer[0]=='q' || buffer[0]=='Q') { printf("Bye.\n"); exit(0); }
-    else if (buffer[0]=='?') { help(); }
-    else if (buffer[0]=='g' || buffer[0]=='G') { go(); }
-    else if (buffer[0]=='r' || buffer[0]=='R') {
-        if (buffer[1] == 'd' || buffer[1]=='D') rdump(dumpsim_file);
-        else {
-            int n=1;
-            if (scanf("%d", &n) == 1) run_cycles(n);
-        }
-    } else if (buffer[0]=='m' || buffer[0]=='M') {
-        uint32_t s,e; if (scanf("%x %x",&s,&e)==2) mdump(dumpsim_file,s,e);
-    } else if (buffer[0]=='i' || buffer[0]=='I') {
-        idump(dumpsim_file);
-    } else { printf("Unknown command\n"); }
-}
 
 /* main */
 int main(int argc, char **argv) {
