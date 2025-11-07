@@ -1,0 +1,3 @@
+ADDI x5, x5, 32
+ADDI x1, x1, 47
+JALR x1, x5, 16
