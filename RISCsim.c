@@ -21,6 +21,11 @@
 #define NUM_CONTROL_SIGNALS      24
 #define WORDS_IN_MEM             0x20000  //128 KB
 
+// Branch Predection Paramaters
+#define BRANCH_PRED_KEY_LEN      6
+#define BRANCH_PRED_TAG_LEN      (17 - BRANCH_PRED_KEY_LEN) // 17 from log2(0x20000) = 17
+#define BRANCH_PRED_SEQ_LEN      2
+
 /***************************************************************/
 /*  Architectural state                                         */
 /***************************************************************/
@@ -29,6 +34,12 @@ uint32_t REGS[32];
 int      RUN_BIT = TRUE;
 int      CYCLE_COUNT = 0;
 
+// Branch Predicition Cache
+int BP_Tag_Store [1 << BRANCH_PRED_KEY_LEN];
+int BP_Seq_Store [1 << BRANCH_PRED_KEY_LEN];
+int BP_SeqLen_Store [1 << BRANCH_PRED_KEY_LEN];
+int BP_Target_Store [1 << BRANCH_PRED_KEY_LEN];
+
 int dep_stall;
 int ex_stall;
 int mem_stall;
@@ -36,6 +47,7 @@ int id_br_stall;
 int ex_br_stall;
 int icache_r;
 int dcache_r;
+int jmp_pcmux;
 
 /***************************************************************/
 /*  Main memory and control store                              */
@@ -56,10 +68,12 @@ typedef struct {
     // IF/ID 
     uint32_t IF_PC, IF_IR;
     int      IF_V;
+    uint8_t  IF_TAKEN;
 
     // ID/EX 
     uint32_t ID_PC, ID_IR, ID_RS1, ID_RS2, ID_IMM;
     int      ID_RD, ID_V;
+    uint8_t  ID_TAKEN;
     int      ID_CS[NUM_CONTROL_SIGNALS];
 
     // EX/MEM 
@@ -242,7 +256,7 @@ void dcache_access(uint32_t addr, uint32_t *read_word, uint32_t write_word, int 
         else if(remainder == 3) {MEMORY[index][3] = (uint8_t)(write_word & 0x000000FF); MEMORY[index+1][0] = (uint8_t)((write_word & 0x0000FF00) >> 8);}
     }
     else if(ldst_op == 7) {
-        if(remainder == 0) {MEMORY[index][0] = (uint8_t)(write_word & 0x000000FF); MEMORY[index][1] = (write_word & 0x0000FF00) >> 8; MEMORY[index][2] = (write_word & 0x00FF0000) >> 16; MEMORY[index][3] = (write_word & 0xFF000000) >> 24;}
+        if(remainder == 0) {MEMORY[index][0] = (uint8_t)(write_word & 0x000000FF); MEMORY[index][1] = (uint8_t)((write_word & 0x0000FF00) >> 8); MEMORY[index][2] = (uint8_t)((write_word & 0x00FF0000) >> 16); MEMORY[index][3] = (uint8_t)((write_word & 0xFF000000) >> 24);}
         else if(remainder == 1) {MEMORY[index][1] = (uint8_t)(write_word & 0x000000FF); MEMORY[index][2] = (uint8_t)((write_word & 0x0000FF00) >> 8); MEMORY[index][3] = (uint8_t)((write_word & 0x00FF0000) >> 16); MEMORY[index+1][0] = (uint8_t)((write_word & 0xFF000000) >> 24);}
         else if(remainder == 2) {MEMORY[index][2] = (uint8_t)(write_word & 0x000000FF); MEMORY[index][3] = (uint8_t)((write_word & 0x0000FF00) >> 8); MEMORY[index+1][0] = (uint8_t)((write_word & 0x00FF0000) >> 16); MEMORY[index+1][1] = (uint8_t)((write_word & 0xFF000000) >> 24);}
         else if(remainder == 3) {MEMORY[index][3] = (uint8_t)(write_word & 0x000000FF); MEMORY[index+1][0] = (uint8_t)((write_word & 0x0000FF00) >> 8); MEMORY[index+1][1] = (uint8_t)((write_word & 0x00FF0000) >> 16); MEMORY[index+1][2] = (uint8_t)((write_word & 0xFF000000) >> 24);}
@@ -267,6 +281,7 @@ void mdump(FILE *dumpsim_file, int start, int stop) {
 
 void rdump(FILE *dumpsim_file) {
     printf("\nCycle Count : %d\nPC : 0x%08x\n", CYCLE_COUNT, PC);
+    //fprintf("\nCycle Count : %d\nPC : 0x%08x\n", CYCLE_COUNT, PC);
     for (int i = 0; i < 32; i++) {
         printf("x%-2d: 0x%08x %s", i, REGS[i],
                (i % 4 == 3) ? "\n" : "  ");
@@ -276,10 +291,19 @@ void rdump(FILE *dumpsim_file) {
     fflush(dumpsim_file);
 }
 
+void bdump(FILE *dumpsim_file) {
+    printf("\nBranch Pred Table:\n");
+    for (int i = 0; i < (1 << BRANCH_PRED_KEY_LEN); i++) {
+        printf("x%-2d: 0x%06x | %02x\n", i, BP_Tag_Store[i], BP_Seq_Store[i]);
+        fprintf("x%-2d: 0x%06x | %02x\n", i, BP_Tag_Store[i], BP_Seq_Store[i]);
+    }
+    fflush(dumpsim_file);
+}
+
 void idump(FILE *dumpsim_file) {
     printf("\n--- Internal State ---\n");
     printf("Cycle: %d  PC: 0x%08x\n", CYCLE_COUNT, PC);
-    printf("Stalls: dep_stall=%d ex_stall=%d mem_stall=%d id_br_stall=%d ex_br_stall=%d icache_r=%d dcache_r=%d\n", dep_stall, ex_stall, mem_stall, id_br_stall, ex_br_stall, icache_r, dcache_r);
+    printf("Stalls: dep_stall=%d ex_stall=%d mem_stall=%d id_br_stall=%d ex_br_stall=%d icache_r=%d dcache_r=%d jmp_pcmux=%d\n", dep_stall, ex_stall, mem_stall, id_br_stall, ex_br_stall, icache_r, dcache_r, jmp_pcmux);
     printf("IF: V=%d PC=0x%08x IR=0x%08x\n", PS.IF_V, PS.IF_PC, PS.IF_IR);
     printf("ID: V=%d PC=0x%08x IR=0x%08x RS1=0x%08x RS2=0x%08x IMM=0x%08x RD=%d\n",
            PS.ID_V, PS.ID_PC, PS.ID_IR, PS.ID_RS1, PS.ID_RS2, PS.ID_IMM, PS.ID_RD);
@@ -291,7 +315,7 @@ void idump(FILE *dumpsim_file) {
     /* also print to dumpsim file */
     fprintf(dumpsim_file, "\n--- Internal State at cycle %d ---\n", CYCLE_COUNT);
     fprintf(dumpsim_file, "PC: 0x%08x\n", PC);
-    fprintf(dumpsim_file, "Stalls: dep_stall=%d ex_stall=%d mem_stall=%d id_br_stall=%d ex_br_stall=%d icache_r=%d dcache_r=%d\n", dep_stall, ex_stall, mem_stall, id_br_stall, ex_br_stall, icache_r, dcache_r);
+    fprintf(dumpsim_file, "Stalls: dep_stall=%d ex_stall=%d mem_stall=%d id_br_stall=%d ex_br_stall=%d icache_r=%d dcache_r=%d jmp_pcmux=%d\n", dep_stall, ex_stall, mem_stall, id_br_stall, ex_br_stall, icache_r, dcache_r, jmp_pcmux);
     fprintf(dumpsim_file, "IF: V=%d PC=0x%08x IR=0x%08x\n", PS.IF_V, PS.IF_PC, PS.IF_IR);
     fprintf(dumpsim_file, "ID: V=%d PC=0x%08x IR=0x%08x RS1=0x%08x RS2=0x%08x IMM=0x%08x RD=%d\n",
            PS.ID_V, PS.ID_PC, PS.ID_IR, PS.ID_RS1, PS.ID_RS2, PS.ID_IMM, PS.ID_RD);
@@ -308,6 +332,8 @@ void help(void) {
     printf("run n       - execute n cycles\n");
     printf("mdump a b   - dump memory [a..b]\n");
     printf("rdump       - dump registers and PC\n");
+    printf("idump       - dump pipeline status\n");
+    printf("bdump       - dump branch pred table\n");
     printf("?            - display help\n");
     printf("quit        - exit simulator\n\n");
 }
@@ -421,6 +447,8 @@ void get_command(FILE * dumpsim_file) {
         uint32_t s,e; if (scanf("%x %x",&s,&e)==2) mdump(dumpsim_file,s,e);
     } else if (buffer[0]=='i' || buffer[0]=='I') {
         idump(dumpsim_file);
+    } else if (buffer[0]=='b' || buffer[0]=='b') {
+        bdump(dumpsim_file);
     } else { printf("Unknown command\n"); }
 }
 
@@ -538,10 +566,55 @@ uint32_t sext(uint32_t input, uint32_t firstemptydigit) {
     }
 }
 
+uint8_t branchPredictionEval (int PC) {
+    PC = PC >> 2;
+    int key = PC & (1 << BRANCH_PRED_KEY_LEN) - 1;
+    int tag = PC >> BRANCH_PRED_KEY_LEN;
+    if (BP_Tag_Store[key] != tag) {return 0;}
+    else {return (BP_Seq_Store[key] & 0x2) >> 1;}
+}
+
+uint32_t branchPredictionTarget (int PC) {
+    PC = PC >> 2;
+    int key = PC & (1 << BRANCH_PRED_KEY_LEN) - 1;
+    int tag = PC >> BRANCH_PRED_KEY_LEN;
+    return BP_Target_Store[key];
+}
+
+void branchPredicitionUpdate (int PC, int target, int result) {
+    result &= 1;
+    PC = PC >> 2;
+    int key = PC & (1 << BRANCH_PRED_KEY_LEN) - 1;
+    int tag = PC >> BRANCH_PRED_KEY_LEN;
+
+    // Tag Overwrite
+    if (BP_Tag_Store[key] != tag) {
+        BP_Tag_Store[key] = tag;
+        BP_Seq_Store[key] = 1;
+        BP_Target_Store[key] = target;
+    }
+
+    // 2 bit sat counter
+    if (!result && BP_Seq_Store[key] != 0){BP_Seq_Store[key] -= 1;}
+    if (result && BP_Seq_Store[key] != 3){BP_Seq_Store[key] += 1;}
+
+    // Sequence Predictor
+    // seq = BP_SeqLen_Store[key] & ((1 << BRANCH_PRED_SEQ_LEN) - 1);
+    // if (BP_SeqLen_Store[key] != BRANCH_PRED_SEQ_LEN) {
+    //     BP_SeqLen_Store[key] += 1;
+    //     BP_Seq_Store[key] = (BP_Seq_Store[key] << 1) + result;
+    // }
+
+}
+
+
+
+
 /* ========== Stage implementations ========== */
 
 /* Signals generated by WB stage and needed by previous stages */
 int v_wb_ld_reg,
+    v_wb_df,
     wb_dr,
     wb_data;
 
@@ -551,6 +624,7 @@ int v_wb_ld_reg,
 void WB_stage(void) {
 
     v_wb_ld_reg = PS.MEM_CS[CS_LDREG] & PS.MEM_V;
+    v_wb_df = v_wb_ld_reg;
     wb_dr = PS.MEM_RD;
 
     int wb_mux = (PS.MEM_CS[CS_WB_MUX1] << 1) + PS.MEM_CS[CS_WB_MUX0];
@@ -569,11 +643,15 @@ void WB_stage(void) {
             break;
     }
 
+
 }
 
 /* Signals generated by MEM stage and needed by previous stages */
 int v_mem_ld_reg,
-    mem_dr;
+    v_mem_df,
+    mem_dr,
+    fb_mem_data;
+    
 
 /***************************************************************/
 /* Pipeline Stage: MEM                                          */
@@ -607,6 +685,24 @@ void MEM_stage(void) {
         mem_data = mem_data & 0x0000FFFF;
     }
 
+    switch ((PS.EX_CS[CS_WB_MUX1] << 1) + PS.EX_CS[CS_WB_MUX0]) {
+        case 0: // PC + 4
+            mem_data = Low32bits(PS.EX_PC + 4);
+            break;
+        case 1: // Memory result
+            mem_data = Low32bits(mem_data);
+            break;
+        case 2: // ALU result
+            mem_data = Low32bits(PS.EX_ALU_RESULT);
+            break;
+        case 3:
+            mem_data = 0;
+            break;
+    }
+
+    fb_mem_data = mem_data;
+
+    v_mem_df = v_mem_ld_reg && !mem_stall;
     NEW_PS.MEM_ALU_RESULT = PS.EX_ALU_RESULT;
     NEW_PS.MEM_IR = IR;
     NEW_PS.MEM_DATA = Low32bits(mem_data);
@@ -619,9 +715,10 @@ void MEM_stage(void) {
 
 /* Signals generated by EX stage and needed by previous stages */
 int v_ex_ld_reg,
+    v_ex_df,
     ex_dr,
-    jmp_pc,
-    jmp_pcmux;
+    ex_data,
+    jmp_pc;
 
 /***************************************************************/
 /* Pipeline Stage: EX                                           */
@@ -643,7 +740,7 @@ void EX_stage(void) {
     uint32_t srcB = Low32bits((PS.ID_CS[CS_ALU_MUX]) ? PS.ID_IMM : PS.ID_RS2);
 
     // ALU
-    switch (alu_op) { 
+    switch (alu_op) {
         case 0: result = srcA + srcB; break; // ADD/ADDI
         case 1: result = srcA - srcB; break; // SUB
         case 4: result = srcA >> (srcB & 0x1F); break; // SRL/SRLI
@@ -682,12 +779,30 @@ void EX_stage(void) {
     // TA ADDER
     ta = PS.ID_CS[CS_TA_MUX] ? PS.ID_RS1 : PS.ID_PC;
     ta = Low32bits(ta + PS.ID_IMM); 
-    jmp_pc = ta;
 
-    jmp_pcmux = comp_result & PS.ID_V;
+    if(comp_op != 0){branchPredicitionUpdate(PS.ID_PC, ta, comp_result);}
+    jmp_pc = comp_result ? ta : PS.ID_PC + 4;
+
+    jmp_pcmux = (comp_result ^ PS.ID_TAKEN) & PS.ID_V;
 
     int LD_MEM = 0;
     if(mem_stall == 0) {LD_MEM = 1;}
+
+    v_ex_df = v_ex_ld_reg && !PS.ID_CS[CS_TA_MUX];
+    switch ((PS.ID_CS[CS_WB_MUX1] << 1) + PS.ID_CS[CS_WB_MUX0]) {
+        case 0: // PC + 4
+            ex_data = Low32bits(PS.ID_PC + 4);
+            break;
+        case 1: // Memory result
+            v_ex_df = 0;
+            break;
+        case 2: // ALU result
+            ex_data = Low32bits(PS.ID_CS[CS_ALU_RESULT_MUX] ? ta : result);
+            break;
+        case 3:
+            ex_data = 0;
+            break;
+    }
 
     if(LD_MEM) {
         NEW_PS.EX_ALU_RESULT = PS.ID_CS[CS_ALU_RESULT_MUX] ? ta: result;
@@ -699,6 +814,8 @@ void EX_stage(void) {
         NEW_PS.EX_V = PS.ID_V;
     }
 
+
+
 }
 
 /***************************************************************/
@@ -708,22 +825,19 @@ void ID_stage(void) {
 
     uint32_t IR = PS.IF_IR;
     int IR30 = (IR & 0x40000000) >> 30;
-    int IR14 = (IR & 0x00004000) >> 14;
-    int IR13 = (IR & 0x00002000) >> 13;
-    int IR12 = (IR & 0x00001000) >> 12;
     int IR5 = (IR & 0x00000020) >> 5;
     int IR3 = (IR & 0x00000008) >> 3;
     int opcode = (IR & 0x0000007F);
-    int funct3 = (4*IR14) + (2*IR13) + IR12;
+    int funct3 = (IR & 0x00007000) >> 12;
 
-    uint32_t ALU_Row = (8*IR5) + (4*IR14) + (2*IR13) + IR12;
+    uint32_t ALU_Row = (8*IR5) + funct3;
     if((opcode == 51) && (funct3 == 0)) {ALU_Row = ALU_Row + (16*IR30);}
     if((opcode == 51) && (funct3 == 5)) {ALU_Row = ALU_Row + (16*IR30);}
     if((opcode == 19) && (funct3 == 5)) {ALU_Row = ALU_Row + (16*IR30);}
-    uint32_t MULT_Row =(4*IR14) + (2*IR13) + IR12;
-    uint32_t LDST_Row =(8*IR5) + (4*IR14) + (2*IR13) + IR12;
-    uint32_t BR_Row =(4*IR14) + (2*IR13) + IR12;
-    uint32_t ADDCONST_Row =IR5;
+    uint32_t MULT_Row = funct3;
+    uint32_t LDST_Row =(8*IR5) + funct3;
+    uint32_t BR_Row = funct3;
+    uint32_t ADDCONST_Row = IR5;
     uint32_t JMP_Row = IR3;
 
     uint32_t Temp_CS[NUM_CONTROL_SIGNALS];
@@ -751,11 +865,14 @@ void ID_stage(void) {
         }
     }
     
-    id_br_stall = Temp_CS[CS_BR_STALL] & PS.IF_V;
+    //id_br_stall = Temp_CS[CS_BR_STALL] & PS.IF_V;
 
     int rs1 = (IR >> 15) & 0x1F;
     int rs2 = (IR >> 20) & 0x1F;
     int rd  = (IR >> 7) & 0x1F;
+
+    int sr1_data = REGS[rs1];
+    int sr2_data = REGS[rs2];
 
     uint32_t imm = 0;
     int iv = (Temp_CS[CS_IV2] * 4) + (Temp_CS[CS_IV1] * 2) + Temp_CS[CS_IV0];
@@ -771,33 +888,55 @@ void ID_stage(void) {
     }
     imm = Low32bits(imm);
 
-    if (v_wb_ld_reg) {REGS[wb_dr] = wb_data;}
-
     if(PS.IF_V == 0) {dep_stall = 0;}
     if(PS.IF_V == 1) {
+        // Feed Forward / Data Forwarding
         dep_stall = 0;
-        if((Temp_CS[CS_SR1_NEEDED] == 1) && (v_wb_ld_reg == 1) && (rs1 == wb_dr)) {dep_stall = 1;}
-        if((Temp_CS[CS_SR1_NEEDED] == 1) && (v_mem_ld_reg == 1) && (rs1 == mem_dr)) {dep_stall = 1;}
-        if((Temp_CS[CS_SR1_NEEDED] == 1) && (v_ex_ld_reg == 1) && (rs1 == ex_dr)) {dep_stall = 1;}
-        if((Temp_CS[CS_SR2_NEEDED] == 1) && (v_wb_ld_reg == 1) && (rs2 == wb_dr)) {dep_stall = 1;}
-        if((Temp_CS[CS_SR2_NEEDED] == 1) && (v_mem_ld_reg == 1) && (rs2 == mem_dr)) {dep_stall = 1;}
-        if((Temp_CS[CS_SR2_NEEDED] == 1) && (v_ex_ld_reg == 1) && (rs2 == ex_dr)) {dep_stall = 1;}
+        if((Temp_CS[CS_SR1_NEEDED] == 1) && (v_ex_ld_reg == 1) && (rs1 == ex_dr)) {
+            if (v_ex_df == 1){
+               sr1_data = ex_data;
+            } else {dep_stall = 1;}
+        } else if((Temp_CS[CS_SR1_NEEDED] == 1) && (v_mem_ld_reg == 1) && (rs1 == mem_dr)) {
+            if (v_mem_df == 1){
+               sr1_data = fb_mem_data;
+            } else {dep_stall = 1;}
+        } else if((Temp_CS[CS_SR1_NEEDED] == 1) && (v_wb_ld_reg == 1) && (rs1 == wb_dr)) {
+            if (v_wb_df == 1){
+               sr1_data = wb_data;
+            } else {dep_stall = 1;}
+        }
+
+        if((Temp_CS[CS_SR2_NEEDED] == 1) && (v_ex_ld_reg == 1) && (rs2 == ex_dr)) {
+            if (v_ex_df == 1){
+               sr2_data = ex_data;
+            } else {dep_stall = 1;}
+        } else if((Temp_CS[CS_SR2_NEEDED] == 1) && (v_mem_ld_reg == 1) && (rs2 == mem_dr)) {
+            if (v_mem_df == 1){
+               sr2_data = fb_mem_data;
+            } else {dep_stall = 1;}
+        } else if((Temp_CS[CS_SR2_NEEDED] == 1) && (v_wb_ld_reg == 1) && (rs2 == wb_dr)) {
+            if (v_wb_df == 1){
+               sr2_data = wb_data;
+            } else {dep_stall = 1;}
+        }
     }
 
+    if (v_wb_ld_reg) {REGS[wb_dr] = wb_data;}
     int LD_EX = 1;
     if(ex_stall == 1) {LD_EX = 0;}
     if(mem_stall == 1) {LD_EX = 0;}
 
     if(LD_EX) {
         NEW_PS.ID_PC = PS.IF_PC;
+        NEW_PS.ID_TAKEN = PS.IF_TAKEN;
         NEW_PS.ID_IR = IR;
-        NEW_PS.ID_RS1 = REGS[rs1];
-        NEW_PS.ID_RS2 = REGS[rs2];
+        NEW_PS.ID_RS1 = sr1_data;
+        NEW_PS.ID_RS2 = sr2_data;
         NEW_PS.ID_IMM = imm;
         NEW_PS.ID_RD = rd;
         memcpy(NEW_PS.ID_CS, Temp_CS, sizeof(int) * NUM_CONTROL_SIGNALS);
         NEW_PS.ID_V = 0;
-        if((PS.IF_V == 1) && (dep_stall == 0)) {NEW_PS.ID_V = 1;}
+        if((PS.IF_V == 1) && (dep_stall == 0) && (jmp_pcmux == 0)) {NEW_PS.ID_V = 1;}
     }
 
 }
@@ -809,8 +948,11 @@ void IF_stage(void) {
     
     int icache_r = 0;
     uint32_t instr = 0;
+
     icache_access(PC, &instr, &icache_r);
     // assuming that instruction cache will never stall
+
+    int taken = branchPredictionEval(PC); // to determine whether we are branching correctly
 
     int LD_ID = 1;
     if(dep_stall == 1) {LD_ID = 0;}
@@ -821,16 +963,20 @@ void IF_stage(void) {
         NEW_PS.IF_PC = PC;
         NEW_PS.IF_IR = Low32bits(instr);
         NEW_PS.IF_V = 0;
-        if((id_br_stall == 0) && (ex_br_stall == 0)) {NEW_PS.IF_V = 1;}
+        NEW_PS.IF_TAKEN = taken;
+        //if((id_br_stall == 0) && (ex_br_stall == 0) && (jmp_pcmux == 0)) {NEW_PS.IF_V = 1;}
+        if ((jmp_pcmux == 0)) {NEW_PS.IF_V = 1;}
     }
 
     int ld_pc = 0;
-    if((id_br_stall == 0) && (ex_br_stall == 0) && (jmp_pcmux == 0) && (LD_ID == 1)) {ld_pc = 1;}
-    if(jmp_pcmux == 1) {ld_pc = 1;}
+    //if((id_br_stall == 0) && (ex_br_stall == 0) && (jmp_pcmux == 0) && (LD_ID == 1)) {ld_pc = 1;}
+    if((jmp_pcmux == 1) || ((jmp_pcmux == 0) && (LD_ID == 1))) {ld_pc = 1;}
+
+    int predPC;
+    predPC = taken ? branchPredictionTarget(PC) : PC + 4;
 
     if(ld_pc == 1) {
-        if(jmp_pcmux == 0) {PC = Low32bits(PC + 4);}
-        else if(jmp_pcmux == 1) {PC = Low32bits(jmp_pc);}
+        PC = jmp_pcmux ? Low32bits(jmp_pc) : Low32bits(predPC);
     }
     
 }
