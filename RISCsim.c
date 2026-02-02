@@ -22,9 +22,10 @@
 #define WORDS_IN_MEM             0x20000  //128 KB
 
 // Branch Predection Paramaters
-#define BRANCH_PRED_KEY_LEN      6
-#define BRANCH_PRED_TAG_LEN      (17 - BRANCH_PRED_KEY_LEN) // 17 from log2(0x20000) = 17
+#define GHR_LENGTH               8
+#define BRANCH_PRED_TAG_LEN      17 // 17 from log2(0x20000) = 17
 #define BRANCH_PRED_SEQ_LEN      2
+
 
 /***************************************************************/
 /*  Architectural state                                         */
@@ -35,10 +36,11 @@ int      RUN_BIT = TRUE;
 int      CYCLE_COUNT = 0;
 
 // Branch Predicition Cache
-int BP_Tag_Store [1 << BRANCH_PRED_KEY_LEN];
-int BP_Seq_Store [1 << BRANCH_PRED_KEY_LEN];
-int BP_SeqLen_Store [1 << BRANCH_PRED_KEY_LEN];
-int BP_Target_Store [1 << BRANCH_PRED_KEY_LEN];
+int BP_Tag_Store [1 << GHR_LENGTH];
+int BP_Seq_Store [1 << GHR_LENGTH];
+int BP_SeqLen_Store [1 << GHR_LENGTH];
+int BP_Target_Store [1 << GHR_LENGTH];
+int GHR;
 
 int dep_stall;
 int ex_stall;
@@ -293,7 +295,7 @@ void rdump(FILE *dumpsim_file) {
 
 void bdump(FILE *dumpsim_file) {
     printf("\nBranch Pred Table:\n");
-    for (int i = 0; i < (1 << BRANCH_PRED_KEY_LEN); i++) {
+    for (int i = 0; i < (1 << GHR_LENGTH); i++) {
         printf("x%-2d: 0x%06x | %02x\n", i, BP_Tag_Store[i], BP_Seq_Store[i]);
         fprintf("x%-2d: 0x%06x | %02x\n", i, BP_Tag_Store[i], BP_Seq_Store[i]);
     }
@@ -566,26 +568,29 @@ uint32_t sext(uint32_t input, uint32_t firstemptydigit) {
     }
 }
 
+
 uint8_t branchPredictionEval (int PC) {
     PC = PC >> 2;
-    int key = PC & (1 << BRANCH_PRED_KEY_LEN) - 1;
-    int tag = PC >> BRANCH_PRED_KEY_LEN;
+    int key = (PC ^ GHR) & (1 << GHR_LENGTH) - 1;
+    int tag = PC;
     if (BP_Tag_Store[key] != tag) {return 0;}
     else {return (BP_Seq_Store[key] & 0x2) >> 1;}
 }
 
 uint32_t branchPredictionTarget (int PC) {
     PC = PC >> 2;
-    int key = PC & (1 << BRANCH_PRED_KEY_LEN) - 1;
-    int tag = PC >> BRANCH_PRED_KEY_LEN;
+    int key = (PC ^ GHR) & (1 << GHR_LENGTH) - 1;
+    int tag = PC;
     return BP_Target_Store[key];
 }
 
-void branchPredicitionUpdate (int PC, int target, int result) {
+void branchPredictionUpdate (int PC, int target, int result) {
     result &= 1;
     PC = PC >> 2;
-    int key = PC & (1 << BRANCH_PRED_KEY_LEN) - 1;
-    int tag = PC >> BRANCH_PRED_KEY_LEN;
+    int key = (PC ^ GHR) & (1 << GHR_LENGTH) - 1;
+    int tag = PC;
+    GHR = (GHR << 1) & (1 << GHR_LENGTH) - 1 ;
+    GHR += result;
 
     // Tag Overwrite
     if (BP_Tag_Store[key] != tag) {
@@ -780,7 +785,7 @@ void EX_stage(void) {
     ta = PS.ID_CS[CS_TA_MUX] ? PS.ID_RS1 : PS.ID_PC;
     ta = Low32bits(ta + PS.ID_IMM); 
 
-    if(comp_op != 0){branchPredicitionUpdate(PS.ID_PC, ta, comp_result);}
+    if(comp_op != 0){branchPredictionUpdate(PS.ID_PC, ta, comp_result);}
     jmp_pc = comp_result ? ta : PS.ID_PC + 4;
 
     jmp_pcmux = (comp_result ^ PS.ID_TAKEN) & PS.ID_V;

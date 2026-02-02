@@ -8,6 +8,7 @@ wire LD_ID, LD_EX, LD_MEM, LD_WB;
 wire DEP_STALL, EX_STALL, MEM_STALL, ID_BR_STALL, EX_BR_STALL;
 wire [31:0] ID_PC_Input, ID_PC_Output, ID_IR_Input, ID_IR_Output;
 wire ID_VALID_Input, ID_VALID_Output;
+wire [31:0] REG_SR1_OUT, REG_SR2_OUT;
 wire [31:0] EX_PC_Input, EX_PC_Output, EX_IV_Input, EX_IV_Output, EX_SR1_Input, EX_SR1_Output, EX_SR2_Input, EX_SR2_Output, EX_DR_Input, EX_DR_Output, EX_CS_Input, EX_CS_Output;
 wire EX_VALID_Input, EX_VALID_Output;
 wire [31:0] MEM_PC_Input, MEM_PC_Output, MEM_TA_Input, MEM_TA_Output, MEM_ALU_Input, MEM_ALU_Output, MEM_DR_Input, MEM_DR_Output, MEM_CS_Input, MEM_CS_Output;
@@ -25,11 +26,27 @@ wire [31:0] WB_DATA;
 // MEMORY INITIALIZATION
 memory(clock, ID_PC_Input[15:0], ID_IR_Input, MEM_TA_Output[15:0], MEM_ALU_Output, MEM_CS_Output[5], MEM_CS_Output[4:2], WB_MEM_Input, MEM_STALL);
 
+// Branch Pred Nets
+wire [31:0] curr_PC, pred_PC, bp_ex_PC, bp_ex_target;
+wire bp_pred_Taken;
+wire [7:0] bp_table_index, bp_ex_table_index;
+wire bp_ex_isbranch, bp_ex_taken;
+
+branchPred(clock, curr_PC, pred_PC, bp_pred_taken, bp_table_index, bp_ex_isbranch, bp_ex_taken, bp_ex_table_index, bp_ex_PC, bp_ex_target);
+
+
+    //input Branch, Taken,
+    //input [7:0] Ex_index, 
+    //input [31:0] Ex_PC, Target
+
 // INSTRUCTION FETCH
 // ------------------------------------------------------------------------------
 wire i1, i2, i3, i4;
 wire [31:0] PC_Input, ID_PC_Input_PlusFour;
 wire LD_PC;
+
+wire [7:0] ID_bp_table_index;
+wire ID_bp_taken_Output;
 
 or(i1, ID_BR_STALL, EX_BR_STALL);
 not(ID_VALID_Input, i1);
@@ -39,13 +56,20 @@ not(i3, JMP_PCMUX);
 and(i4, ID_VALID_Input, LD_ID, i3);
 or(LD_PC, i4, JMP_PCMUX);
 reg32_en PC(PC_Input, clock, LD_PC, ID_PC_Input);
+
+assign curr_PC = ID_PC_Input; //Branch Pred
+
 //instructioncache(ID_PC_Input, ID_IR_Input);
-adder(ID_PC_Input, 32'b00000000000000000000000000000100, 1'b0, ID_PC_Input_PlusFour);
-mux2_32bit(ID_PC_Input_PlusFour, JMP_PC, JMP_PCMUX, PC_Input);
+//adder(ID_PC_Input, 32'b00000000000000000000000000000100, 1'b0, ID_PC_Input_PlusFour);
+
+
+mux2_32bit(pred_PC, JMP_PC, JMP_PCMUX, PC_Input, bp_pred_Taken, bp_table_index, );
 
 reg32_en ID_PC(ID_PC_Input, clock, LD_ID, ID_PC_Output);
 reg32_en ID_IR(ID_IR_Input, clock, LD_ID, ID_IR_Output);
 dff_en ID_VALID(ID_VALID_Input, clock, LD_ID, ID_VALID_Output);
+dff_en ID_bp_taken(bp_pred_taken, clock, LD_ID, ID_bp_taken_Output);
+regn_en #(8) ID_bp_tag(bp_table_index, clock, LD_ID, ID_bp_table_index);
 // ------------------------------------------------------------------------------
 
 // INSTRUCTION DECODE
@@ -62,26 +86,53 @@ assign EX_DR_Input = {27'b0, ID_IR_Output[11:7]};
 
 assign EX_PC_Input = ID_PC_Output;
 immediatevaluebuilder(ID_IR_Output, EX_CS_Input[21:19], EX_IV_Input);
-registerfile(S1Reg, S2Reg, WB_LDREG, WB_DR, WB_DATA, clock, EX_SR1_Input, EX_SR2_Input);
+registerfile(S1Reg, S2Reg, WB_LDREG, WB_DR, WB_DATA, clock, REG_SR1_OUT, REG_SR2_OUT);
 controlstore(ID_IR_Output, EX_CS_Input);
 
 assign SR1_Needed = EX_CS_Input[23];
 assign SR2_Needed = EX_CS_Input[22];
 
-fivebitcomparator(S1Reg, EX_DR, i5);
-fivebitcomparator(S1Reg, MEM_DR, i6);
-fivebitcomparator(S1Reg, WB_DR, i7);
-fivebitcomparator(S2Reg, EX_DR, i8);
-fivebitcomparator(S2Reg, MEM_DR, i9);
-fivebitcomparator(S2Reg, WB_DR, i10);
+//Data Forwarding
 
-and(i11, i5, V_EX_LDREG, SR1_Needed, ID_VALID_Output);
-and(i12, i6, V_MEM_LDREG, SR1_Needed, ID_VALID_Output);
-and(i13, i7, V_WB_LDREG, SR1_Needed, ID_VALID_Output);
-and(i14, i8, V_EX_LDREG, SR2_Needed, ID_VALID_Output);
-and(i15, i9, V_MEM_LDREG, SR2_Needed, ID_VALID_Output);
-and(i16, i10, V_WB_LDREG, SR2_Needed, ID_VALID_Output);
-or(DEP_STALL, i11, i12, i13, i14, i15, i16);
+wire [31:0] EX_DATA_OUT, MEM_DATA_OUT, WB_DATA_OUT;
+wire [7:0] EX_bp_table_index;
+wire EX_bp_taken_Output;
+
+wire dep_stall_r1, dep_stall_r2; 
+wire v_ex_df;
+
+and(v_ex_df, V_EX_LDREG, EX_CS_Input[16]); //CS col 16? is TA MUX
+
+forwarding(S1Reg, 
+V_EX_LDREG,  EX_DR,  v_ex_df,        EX_DATA_OUT,
+V_MEM_LDREG, MEM_DR, WB_VALID_Input, MEM_DATA_OUT,
+V_WB_LDREG,  WB_DR,  V_WB_LDREG,     WB_DATA_OUT,
+REG_SR1_OUT,
+dep_stall_r1, EX_SR1_Input);
+
+forwarding(S2Reg, 
+V_EX_LDREG,  EX_DR,  v_ex_df,        EX_DATA_OUT,
+V_MEM_LDREG, MEM_DR, WB_VALID_Input, MEM_DATA_OUT,
+V_WB_LDREG,  WB_DR,  V_WB_LDREG,     WB_DATA_OUT,
+REG_SR2_OUT,
+dep_stall_r2, EX_SR2_Input);
+
+//fivebitcomparator(S1Reg, EX_DR, i5);
+//fivebitcomparator(S1Reg, MEM_DR, i6);
+//fivebitcomparator(S1Reg, WB_DR, i7);
+//fivebitcomparator(S2Reg, EX_DR, i8);
+//fivebitcomparator(S2Reg, MEM_DR, i9);
+//fivebitcomparator(S2Reg, WB_DR, i10);
+
+//and(i11, i5, V_EX_LDREG, SR1_Needed, ID_VALID_Output);
+//and(i12, i6, V_MEM_LDREG, SR1_Needed, ID_VALID_Output);
+//and(i13, i7, V_WB_LDREG, SR1_Needed, ID_VALID_Output);
+//and(i14, i8, V_EX_LDREG, SR2_Needed, ID_VALID_Output);
+//and(i15, i9, V_MEM_LDREG, SR2_Needed, ID_VALID_Output);
+//and(i16, i10, V_WB_LDREG, SR2_Needed, ID_VALID_Output);
+//or(DEP_STALL, i11, i12, i13, i14, i15, i16);
+
+//or(DEP_STALL, dep_stall_r1, dep_stall_r2);
 
 and(ID_BR_STALL, ID_VALID_Output, EX_CS_Input[18]);
 not(i17, DEP_STALL);
@@ -96,19 +147,29 @@ reg32_en EX_SR1(EX_SR1_Input, clock, LD_EX, EX_SR1_Output);
 reg32_en EX_SR2(EX_SR2_Input, clock, LD_EX, EX_SR2_Output);
 reg32_en EX_DR1(EX_DR_Input, clock, LD_EX, EX_DR_Output);
 reg32_en EX_CS(EX_CS_Input, clock, LD_EX, EX_CS_Output);
+dff_en EX_bp_taken(ID_bp_taken_Output, clock, LD_ID, EX_bp_taken_Output);
+regn_en #(8) IE_bp_tag(ID_bp_table_index, clock, LD_ID, EX_bp_table_index);
 dff_en EX_VALID(EX_VALID_Input, clock, LD_EX, EX_VALID_Output);
 // ------------------------------------------------------------------------------
 
 // EXECUTE
 // ------------------------------------------------------------------------------
 wire [31:0] i19, i20, i21;
-wire i22;
+wire i22, i23;
 
+assign bp_ex_PC = EX_PC_Output;
 assign MEM_PC_Input = EX_PC_Output;
+assign bp_ex_table_index = EX_bp_table_index;
 mux2_32bit(EX_PC_Output, EX_SR1_Output, EX_CS_Output[16], i19);
 mux2_32bit(EX_SR2_Output, EX_IV_Output, EX_CS_Output[15], i20);
 adder(i19, EX_IV_Output, 1'b0, MEM_TA_Input);
-assign JMP_PC = MEM_TA_Input;
+
+adder(EX_PC_Output, 32'b00000000000000000000000000000100, 1'b0, EX_PC_Output_PlusFour);
+mux2_32bit(MEM_TA_Input, EX_PC_Output_PlusFour, EX_bp_taken_Output, JMP_PC);
+
+// assign JMP_PC = MEM_TA_Input;
+assign bp_ex_target = MEM_TA_Input;
+
 ALU(EX_SR1_Output, i20, EX_CS_Output[14:10], i21, EX_STALL);
 mux2_32bit(i21, MEM_TA_Input, EX_CS_Output[9], MEM_ALU_Input);
 assign MEM_DR_Input = EX_DR_Output;
@@ -116,7 +177,10 @@ assign EX_DR = EX_DR_Output[4:0];
 assign MEM_CS_Input = EX_CS_Output;
 assign MEM_VALID_Input = EX_VALID_Output;
 branchcomparator(EX_SR1_Output, EX_SR2_Output, EX_CS_Output[8:6], i22);
-and(JMP_PCMUX, i22, EX_VALID_Output);
+and(bp_ex_taken, i22, EX_VALID_Output);
+xor(i23, i22, EX_bp_taken_Output)
+and(JMP_PCMUX, i23, EX_VALID_Output);
+assign bp_ex_isbranch = EX_CS_Output[18];
 and(EX_BR_STALL, EX_VALID_Output, EX_CS_Output[18]);
 and(V_EX_LDREG, EX_VALID_Output, EX_CS_Output[17]);
 not(LD_MEM, MEM_STALL);
