@@ -568,6 +568,18 @@ uint32_t sext(uint32_t input, uint32_t firstemptydigit) {
     }
 }
 
+int simddpe(int input1, int input2, int numlength){
+    int acc = 0;
+    int op1, op2;
+    while (input1 && input2) {
+        op1 = input1 & ((1<<numlength)-1);
+        op2 = input2 & ((1<<numlength)-1);
+        input1 = input1 >> numlength;
+        input2 = input2 >> numlength;
+        acc += op1 * op2;
+    }
+    return acc;
+}
 
 uint8_t branchPredictionEval (int PC) {
     PC = PC >> 2;
@@ -726,10 +738,164 @@ int v_ex_ld_reg,
     jmp_pc;
 
 /***************************************************************/
+/* Pipeline Stage: EX - Extended                               */
+/***************************************************************/
+
+void extension_stage(void){
+
+    // biases
+    int imgptr, biasptr, resultptr, size;
+    int ready, biasstate, start, index;
+    int imgbuffer, biasbuffer, resultbuffer;
+
+    int SIZEPOSITION = 12; // @Aryan where is it
+
+    switch (biasstate) // bias addition** (need float unit?)
+    {
+    case 0:
+        imgptr = biasptr = resultptr = index = 0;
+        if (start) {
+            biasstate = 1;
+            imgptr = [prev stage];
+            biasptr = [prev stage];
+            resultptr = [prev stage];
+        }
+        break;
+
+    case 1:
+        dcache_access(imgptr + SIZEPOSITION, &size, 0, &ready, 4); // Currently LHWU
+        if (ready) {
+            // dcache_access(imgptr, &imgbuffer, 0, &ready, 2); // Currently LW
+            biasstate = 2;
+        }
+        break;
+
+    case 2:
+        dcache_access(imgptr + index, &imgbuffer, 0, &ready, 2); // Currently LW
+        if (ready) {biasstate = 3;}
+        break;
+
+    case 3:
+        dcache_access(biasptr + index, &biasbuffer, 0, &ready, 2); // Currently LW
+        if (ready) {biasstate = 4;}
+        break;
+
+    case 4:
+        int ldst, ldstremaining;
+        ldstremaining = 0;
+        switch (size - index) {
+        case 1:
+            ldst = 5;
+            break;
+        case 3:
+            ldstremaining = 1;
+        case 2:
+            ldst = 6;
+            break;
+        case 4:
+            ldst = 7;
+            break;
+        default:
+            ldst = 7;
+            ldstremaining = 1;
+            break;
+        }
+
+        resultbuffer = imgbuffer + biasbuffer;
+        dcache_access(resultptr + index, 0, resultbuffer, &ready, ldst);
+
+        if (ready) {
+            index += 4;
+            if (ldstremaining){
+                if (ldst == 6) {
+                    biasstate = 5;
+                } else {biasstate = 2;}
+            } else {biasstate = 7;}
+        }
+        break;
+    
+    
+    default:
+        biasstate = 0;
+        break;
+    }
+
+    
+    int dpestate;
+    int dpein;
+    int linelength;
+    int lineoffset;
+    int verticaloffset;
+    int weightptr;
+    int weightbuffer[4];
+    int dpeacc[4];
+
+    switch (dpestate) {
+
+    case 0:
+        verticaloffset = lineoffset = index = 0;
+        dpeacc[0] = 0;
+        dpeacc[1] = 0;
+        dpeacc[2] = 0;
+        dpeacc[3] = 0;
+
+    case 1: 
+        dcache_access(imgptr + lineoffset + 4 * index, &imgbuffer, 0, &ready, 2); // Currently LW
+
+        if (ready) dpestate = 2;
+    case 2:
+        dcache_access(weightptr + verticaloffset + lineoffset + 4 * index, &weightbuffer[index], 0, &ready, 2); // Currently LW
+    
+        if (ready) {
+            if (index > 0){
+                dpeacc[index-1] += simddpe(weightbuffer[index-1], imgbuffer, 8);
+            }
+            if (index == 3){
+                dpestate = 3;
+                index = 0;
+            }
+        }
+
+    case 3:
+        dcache_access(resultptr + verticaloffset + lineoffset + 4 * index, 0, &dpeacc[index], &ready, 7);
+
+        if (ready) {
+            if (index == 0) dpeacc[3] += simddpe(weightbuffer[3], imgbuffer, 8);
+            if (index == 3) dpestate = 4;
+        }   
+    
+
+    case 4:
+        if (lineoffset + 4 > linelength) {
+            if (verticaloffset *linelength + lineoffset + 4 > size){
+                dpestate = 0;
+            }   else {
+            verticaloffset += linelength;
+            lineoffset = 0;
+            index = 0;
+            dpestate = 1;
+            dpeacc[0] = 0;
+            dpeacc[1] = 0;
+            dpeacc[2] = 0;
+            dpeacc[3] = 0;
+            }
+        } else {
+            index = 0;
+            lineoffset += 4;
+            dpestate = 1;
+        }
+    
+    }
+
+}
+
+/***************************************************************/
 /* Pipeline Stage: EX                                           */
 /***************************************************************/
 void EX_stage(void) {
     
+    extension_stage();
+
     v_ex_ld_reg = PS.ID_CS[CS_LDREG] & PS.ID_V;
     ex_dr = PS.ID_RD;
     ex_br_stall = PS.ID_CS[CS_BR_STALL] & PS.ID_V;
