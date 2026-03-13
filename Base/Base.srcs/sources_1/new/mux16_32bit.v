@@ -22,11 +22,11 @@ module mux16_32bit(
     );
 wire [31:0] zero, one, two, three;
 
-mux4_32bit(inputzero, inputone, inputtwo, inputthree, select[1:0], zero);
-mux4_32bit(inputfour, inputfive, inputsix, inputseven, select[1:0], one);
-mux4_32bit(inputeight, inputnine, inputten, inputeleven, select[1:0], two);
-mux4_32bit(inputtwelve, inputthirteen, inputfourteen, inputfifteen, select[1:0], three);
+mux4_32bit Mux1(inputzero, inputone, inputtwo, inputthree, select[1:0], zero);
+mux4_32bit Mux2(inputfour, inputfive, inputsix, inputseven, select[1:0], one);
+mux4_32bit Mux3(inputeight, inputnine, inputten, inputeleven, select[1:0], two);
+mux4_32bit Mux4(inputtwelve, inputthirteen, inputfourteen, inputfifteen, select[1:0], three);
 
-mux4_32bit(zero, one, two, three, select[3:2], finaloutput);
+mux4_32bit Mux5(zero, one, two, three, select[3:2], finaloutput);
 
 endmodule

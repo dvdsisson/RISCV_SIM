@@ -1,16 +1,17 @@
 `timescale 1ns / 1ps
 
 module dlatch(
-    input datainput,
-    input enable,
-    output dataoutput
-    );
-wire notdatainput, datainputand, notdatainputand, notdataoutput;
+    input D,
+    input Enable,     
+    output Q
+);
 
-not(notdatainput, datainput);
-and(datainputand, datainput, enable);
-and(notdatainputand, notdatainput, enable);
-nor(notdataoutput, datainputand, dataoutput);
-nor(dataoutput, notdatainputand, notdataoutput);
+wire D_bar, S, R, Q_bar;
+
+not (D_bar, D);
+nand (S, D, Enable);
+nand (R, D_bar, Enable);
+nand (Q, S, Q_bar);
+nand (Q_bar, R, Q);
 
 endmodule

@@ -8,8 +8,8 @@ module shifter(
     output [31:0] logicalleftresult
     );
 
-logicalrightshifter(value, shift, logicalrightresult);
-arithmeticrightshifter(value, shift, arithmeticrightresult);
-logicalleftshifter(value, shift, logicalleftresult);
+logicalrightshifter LogicalRightShifter(value, shift, logicalrightresult);
+arithmeticrightshifter ArithmeticRightShifter(value, shift, arithmeticrightresult);
+logicalleftshifter LogicalLeftShifter(value, shift, logicalleftresult);
 
 endmodule

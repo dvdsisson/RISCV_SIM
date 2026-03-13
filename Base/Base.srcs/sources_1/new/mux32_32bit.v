@@ -38,17 +38,17 @@ module mux32_32bit(
     );
 wire [31:0] zero, one, two, three, four, five, six, seven, eight, nine;
 
-mux4_32bit(inputzero, inputone, inputtwo, inputthree, select[1:0], zero);
-mux4_32bit(inputfour, inputfive, inputsix, inputseven, select[1:0], one);
-mux4_32bit(inputeight, inputnine, inputten, inputeleven, select[1:0], two);
-mux4_32bit(inputtwelve, inputthirteen, inputfourteen, inputfifteen, select[1:0], three);
-mux4_32bit(inputsixteen, inputseventeen, inputeighteen, inputnineteen, select[1:0], four);
-mux4_32bit(inputtwenty, inputtwentyone, inputtwentytwo, inputtwentythree, select[1:0], five);
-mux4_32bit(inputtwentyfour, inputtwentyfive, inputtwentysix, inputtwentyseven, select[1:0], six);
-mux4_32bit(inputtwentyeight, inputtwentynine, inputthirty, inputthirtyone, select[1:0], seven);
+mux4_32bit Mux1(inputzero, inputone, inputtwo, inputthree, select[1:0], zero);
+mux4_32bit Mux2(inputfour, inputfive, inputsix, inputseven, select[1:0], one);
+mux4_32bit Mux3(inputeight, inputnine, inputten, inputeleven, select[1:0], two);
+mux4_32bit Mux4(inputtwelve, inputthirteen, inputfourteen, inputfifteen, select[1:0], three);
+mux4_32bit Mux5(inputsixteen, inputseventeen, inputeighteen, inputnineteen, select[1:0], four);
+mux4_32bit Mux6(inputtwenty, inputtwentyone, inputtwentytwo, inputtwentythree, select[1:0], five);
+mux4_32bit Mux7(inputtwentyfour, inputtwentyfive, inputtwentysix, inputtwentyseven, select[1:0], six);
+mux4_32bit Mux8(inputtwentyeight, inputtwentynine, inputthirty, inputthirtyone, select[1:0], seven);
 
-mux4_32bit(zero, one, two, three, select[3:2], eight);
-mux4_32bit(four, five, six, seven, select[3:2], nine);
-mux2_32bit(eight, nine, select[4], finaloutput);
+mux4_32bit Mux9(zero, one, two, three, select[3:2], eight);
+mux4_32bit Mux10(four, five, six, seven, select[3:2], nine);
+mux2_32bit Mux11(eight, nine, select[4], finaloutput);
 
 endmodule

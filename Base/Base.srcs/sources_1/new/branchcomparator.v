@@ -10,11 +10,11 @@ wire ugreater, unotgreater, uless, unotless, uequal, unotequal;
 wire sgreater, snotgreater, sless, snotless, sequal, snotequal;
 wire zero, one;
 
-unsignedcomparator_32bit(A, B, ugreater, unotgreater, uless, unotless, uequal, unotequal);
-signedcomparator_32bit(A, B, sgreater, snotgreater, sless, snotless, sequal, snotequal);
+unsignedcomparator_32bit UnsignedComparator(A, B, ugreater, unotgreater, uless, unotless, uequal, unotequal);
+signedcomparator_32bit SignedComparator(A, B, sgreater, snotgreater, sless, snotless, sequal, snotequal);
 
-mux4(1'b0, uequal, unotequal, sless, COMP_OP[0], COMP_OP[1], zero);
-mux4(snotless, uless, unotless, 1'b1, COMP_OP[0], COMP_OP[1], one);
-mux2(zero, one, COMP_OP[2], result);
+mux4 Mux1(1'b0, uequal, unotequal, sless, COMP_OP[0], COMP_OP[1], zero);
+mux4 Mux2(snotless, uless, unotless, 1'b1, COMP_OP[0], COMP_OP[1], one);
+mux2 Mux3(zero, one, COMP_OP[2], result);
 
 endmodule

@@ -3,14 +3,113 @@
 # SW Build 4029153 on Fri Oct 13 20:14:34 MDT 2023
 # IP Build 4028589 on Sat Oct 14 00:45:43 MDT 2023
 # SharedData Build 4025554 on Tue Oct 10 17:18:54 MDT 2023
-# Start of session at: Wed Jan  7 14:21:30 2026
-# Process ID: 18924
-# Current directory: C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base
-# Command line: vivado.exe -gui_launcher_event rodinguilauncherevent16992 C:\Users\Musta\Documents\GitHub\RISCV_SIM\Base\Base.xpr
-# Log file: C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/vivado.log
-# Journal file: C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base\vivado.jou
-# Running On: RF-Envy, OS: Windows, CPU Frequency: 2304 MHz, CPU Physical cores: 8, Host memory: 33979 MB
+# Start of session at: Sat Feb  7 11:12:26 2026
+# Process ID: 29868
+# Current directory: C:/Base
+# Command line: vivado.exe -gui_launcher_event rodinguilauncherevent3968 C:\Base\Base.xpr
+# Log file: C:/Base/vivado.log
+# Journal file: C:/Base\vivado.jou
+# Running On: Joshua, OS: Windows, CPU Frequency: 2995 MHz, CPU Physical cores: 4, Host memory: 34194 MB
 #-----------------------------------------------------------
 start_gui
-open_project C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.xpr
-update_compile_order -fileset sources_1
+open_project C:/Base/Base.xpr
+launch_simulation
+launch_simulation
+close [ open C:/Base/Base.srcs/sources_1/new/reg32_en_reset.v w ]
+add_files C:/Base/Base.srcs/sources_1/new/reg32_en_reset.v
+close [ open C:/Base/Base.srcs/sources_1/new/dff_en_reset.v w ]
+add_files C:/Base/Base.srcs/sources_1/new/dff_en_reset.v
+close [ open C:/Base/Base.srcs/sources_1/new/dff_reset.v w ]
+add_files C:/Base/Base.srcs/sources_1/new/dff_reset.v
+launch_simulation
+source processor_tb.tcl
+close_sim
+launch_simulation
+source processor_tb.tcl
+current_wave_config {Untitled 2}
+add_wave {{/processor_tb/uut/PC/dataoutput}} 
+close_sim
+launch_simulation
+source processor_tb.tcl
+current_wave_config {Untitled 3}
+add_wave {{/processor_tb/uut/PC/dataoutput}} 
+close_sim
+launch_simulation
+source processor_tb.tcl
+current_wave_config {Untitled 4}
+add_wave {{/processor_tb/uut/PC/dataoutput}} 
+save_wave_config {C:/Base/processor_tb_behav.wcfg}
+add_files -fileset sim_1 -norecurse C:/Base/processor_tb_behav.wcfg
+set_property xsim.view C:/Base/processor_tb_behav.wcfg [get_filesets sim_1]
+close_sim
+launch_simulation
+launch_simulation
+open_wave_config C:/Base/processor_tb_behav.wcfg
+source processor_tb.tcl
+close_sim
+launch_simulation
+open_wave_config C:/Base/processor_tb_behav.wcfg
+source processor_tb.tcl
+current_wave_config {processor_tb_behav.wcfg}
+add_wave {{/processor_tb/uut/PC/datainput}} 
+current_wave_config {processor_tb_behav.wcfg}
+add_wave {{/processor_tb/uut/PC/enable}} 
+current_wave_config {processor_tb_behav.wcfg}
+add_wave {{/processor_tb/uut/Memory/ICaddress}} 
+current_wave_config {processor_tb_behav.wcfg}
+add_wave {{/processor_tb/uut/Memory/ICoutputvalue}} 
+save_wave_config {C:/Base/processor_tb_behav.wcfg}
+relaunch_sim
+close_sim
+launch_simulation
+open_wave_config C:/Base/processor_tb_behav.wcfg
+source processor_tb.tcl
+current_wave_config {processor_tb_behav.wcfg}
+add_wave {{/processor_tb/uut/i1}} 
+current_wave_config {processor_tb_behav.wcfg}
+add_wave {{/processor_tb/uut/i2}} 
+current_wave_config {processor_tb_behav.wcfg}
+add_wave {{/processor_tb/uut/i3}} 
+current_wave_config {processor_tb_behav.wcfg}
+add_wave {{/processor_tb/uut/i4}} 
+relaunch_sim
+save_wave_config {C:/Base/processor_tb_behav.wcfg}
+close_sim
+launch_simulation
+launch_simulation
+launch_simulation
+launch_simulation
+launch_simulation
+source processor_tb.tcl
+current_wave_config {Untitled 5}
+add_wave {{/processor_tb/uut/PC/datainput}} 
+current_wave_config {Untitled 5}
+add_wave {{/processor_tb/uut/PC/dataoutput}} 
+current_wave_config {Untitled 5}
+add_wave {{/processor_tb/uut/PC/enable}} 
+current_wave_config {Untitled 5}
+add_wave {{/processor_tb/uut/ID_PC/datainput}} 
+current_wave_config {Untitled 5}
+add_wave {{/processor_tb/uut/ID_PC/dataoutput}} 
+relaunch_sim
+current_wave_config {Untitled 5}
+add_wave {{/processor_tb/uut/ID_IR}} 
+relaunch_sim
+current_wave_config {Untitled 5}
+add_wave {{/processor_tb/uut/ImmediateValueBuilder/IV}} 
+relaunch_sim
+current_wave_config {Untitled 5}
+add_wave {{/processor_tb/uut/alu/C}} 
+relaunch_sim
+current_wave_config {Untitled 5}
+add_wave {{/processor_tb/uut/EX_IV/dataoutput}} 
+current_wave_config {Untitled 5}
+add_wave {{/processor_tb/uut/EX_SR1}} 
+current_wave_config {Untitled 5}
+add_wave {{/processor_tb/uut/EX_SR1/dataoutput}} 
+relaunch_sim
+current_wave_config {Untitled 5}
+add_wave {{/processor_tb/uut/RegisterFile/S1Reg}} 
+current_wave_config {Untitled 5}
+add_wave {{/processor_tb/uut/RegisterFile/S1Value}} 
+relaunch_sim

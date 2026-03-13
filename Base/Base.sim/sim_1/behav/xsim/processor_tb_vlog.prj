@@ -1,0 +1,45 @@
+# compile verilog/system verilog design source files
+verilog xil_defaultlib  \
+"../../../../Base.srcs/sources_1/new/ALU.v" \
+"../../../../Base.srcs/sources_1/new/adder.v" \
+"../../../../Base.srcs/sources_1/new/arithmeticrightshifter.v" \
+"../../../../Base.srcs/sources_1/new/branchcomparator.v" \
+"../../../../Base.srcs/sources_1/new/comparatorblock.v" \
+"../../../../Base.srcs/sources_1/new/controlstore.v" \
+"../../../../Base.srcs/sources_1/new/datacache.v" \
+"../../../../Base.srcs/sources_1/new/dff_en.v" \
+"../../../../Base.srcs/sources_1/new/divider.v" \
+"../../../../Base.srcs/sources_1/new/eightbitadder.v" \
+"../../../../Base.srcs/sources_1/new/fivebitcomparator.v" \
+"../../../../Base.srcs/sources_1/new/immediatevaluebuilder.v" \
+"../../../../Base.srcs/sources_1/new/instructioncache.v" \
+"../../../../Base.srcs/sources_1/new/logicalleftshifter.v" \
+"../../../../Base.srcs/sources_1/new/logicalrightshifter.v" \
+"../../../../Base.srcs/sources_1/new/logicunit.v" \
+"../../../../Base.srcs/sources_1/new/memory.v" \
+"../../../../Base.srcs/sources_1/new/multiplier.v" \
+"../../../../Base.srcs/sources_1/new/mux16_32bit.v" \
+"../../../../Base.srcs/sources_1/new/mux2.v" \
+"../../../../Base.srcs/sources_1/new/mux2_32bit.v" \
+"../../../../Base.srcs/sources_1/new/mux32_32bit.v" \
+"../../../../Base.srcs/sources_1/new/mux4.v" \
+"../../../../Base.srcs/sources_1/new/mux4_32bit.v" \
+"../../../../Base.srcs/sources_1/new/mux8_32bit.v" \
+"../../../../Base.srcs/sources_1/new/reg32_en.v" \
+"../../../../Base.srcs/sources_1/new/shifter.v" \
+"../../../../Base.srcs/sources_1/new/signedcomparator_32bit.v" \
+"../../../../Base.srcs/sources_1/new/unsignedcomparator_32bit.v" \
+"../../../../Base.srcs/sources_1/new/processor.v" \
+"../../../../Base.srcs/sources_1/new/registerfile.v" \
+"../../../../Base.srcs/sources_1/new/reg32_en_reset.v" \
+"../../../../Base.srcs/sources_1/new/dff_en_reset.v" \
+"../../../../Base.srcs/sources_1/new/dff_reset.v" \
+"../../../../Base.srcs/sources_1/new/full_adder.v" \
+"../../../../Base.srcs/sources_1/new/half_adder.v" \
+"../../../../Base.srcs/sim_1/new/processor_tb.v" \
+
+# compile glbl module
+verilog xil_defaultlib "glbl.v"
+
+# Do not sort compile order
+nosort

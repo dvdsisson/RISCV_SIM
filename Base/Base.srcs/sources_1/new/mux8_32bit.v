@@ -14,9 +14,9 @@ module mux8_32bit(
     );
 wire [31:0] zero, one;
 
-mux4_32bit(inputzero, inputone, inputtwo, inputthree, select[1:0], zero);
-mux4_32bit(inputfour, inputfive, inputsix, inputseven, select[1:0], one);
+mux4_32bit Mux1(inputzero, inputone, inputtwo, inputthree, select[1:0], zero);
+mux4_32bit Mux2(inputfour, inputfive, inputsix, inputseven, select[1:0], one);
 
-mux2_32bit(zero, one, select[2], finaloutput);
+mux2_32bit Mux3(zero, one, select[2], finaloutput);
 
 endmodule

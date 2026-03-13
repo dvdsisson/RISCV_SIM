@@ -1,0 +1,51 @@
+#-----------------------------------------------------------
+# Vivado v2023.2 (64-bit)
+# SW Build 4029153 on Fri Oct 13 20:14:34 MDT 2023
+# IP Build 4028589 on Sat Oct 14 00:45:43 MDT 2023
+# SharedData Build 4025554 on Tue Oct 10 17:18:54 MDT 2023
+# Start of session at: Fri Mar 13 09:46:52 2026
+# Process ID: 7368
+# Current directory: C:/Base/Base.runs/synth_1
+# Command line: vivado.exe -log processor.vds -product Vivado -mode batch -messageDb vivado.pb -notrace -source processor.tcl
+# Log file: C:/Base/Base.runs/synth_1/processor.vds
+# Journal file: C:/Base/Base.runs/synth_1\vivado.jou
+# Running On: Joshua, OS: Windows, CPU Frequency: 2995 MHz, CPU Physical cores: 4, Host memory: 34194 MB
+#-----------------------------------------------------------
+source processor.tcl -notrace
+create_project: Time (s): cpu = 00:00:07 ; elapsed = 00:00:07 . Memory (MB): peak = 473.184 ; gain = 177.633
+Command: synth_design -top processor -part xc7k70tfbv676-1
+Starting synth_design
+Attempting to get a license for feature 'Synthesis' and/or device 'xc7k70t'
+INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7k70t'
+INFO: [Synth 8-7079] Multithreading enabled for synth_design using a maximum of 2 processes.
+INFO: [Synth 8-7078] Launching helper process for spawning children vivado processes
+INFO: [Synth 8-7075] Helper process launched with PID 23092
+---------------------------------------------------------------------------------
+Starting Synthesize : Time (s): cpu = 00:00:07 ; elapsed = 00:00:07 . Memory (MB): peak = 923.707 ; gain = 445.586
+---------------------------------------------------------------------------------
+INFO: [Synth 8-11241] undeclared symbol 'dff_input', assumed default net type 'wire' [C:/Base/Base.srcs/sources_1/new/dff_en_reset.v:15]
+INFO: [Synth 8-6157] synthesizing module 'processor' [C:/Base/Base.srcs/sources_1/new/processor.v:3]
+INFO: [Synth 8-6157] synthesizing module 'memory' [C:/Base/Base.srcs/sources_1/new/memory.v:3]
+INFO: [Synth 8-155] case statement is not full and has no default [C:/Base/Base.srcs/sources_1/new/memory.v:40]
+INFO: [Synth 8-155] case statement is not full and has no default [C:/Base/Base.srcs/sources_1/new/memory.v:52]
+INFO: [Synth 8-6155] done synthesizing module 'memory' (0#1) [C:/Base/Base.srcs/sources_1/new/memory.v:3]
+INFO: [Synth 8-6157] synthesizing module 'reg32_en_reset' [C:/Base/Base.srcs/sources_1/new/reg32_en_reset.v:3]
+INFO: [Synth 8-6157] synthesizing module 'dff_en_reset' [C:/Base/Base.srcs/sources_1/new/dff_en_reset.v:3]
+INFO: [Synth 8-6157] synthesizing module 'mux2' [C:/Base/Base.srcs/sources_1/new/mux2.v:3]
+INFO: [Synth 8-6155] done synthesizing module 'mux2' (0#1) [C:/Base/Base.srcs/sources_1/new/mux2.v:3]
+INFO: [Synth 8-6157] synthesizing module 'dff_reset' [C:/Base/Base.srcs/sources_1/new/dff_reset.v:3]
+ERROR: [Synth 8-439] module 'dlatch' not found [C:/Base/Base.srcs/sources_1/new/dff_reset.v:15]
+ERROR: [Synth 8-6156] failed synthesizing module 'dff_reset' [C:/Base/Base.srcs/sources_1/new/dff_reset.v:3]
+ERROR: [Synth 8-6156] failed synthesizing module 'dff_en_reset' [C:/Base/Base.srcs/sources_1/new/dff_en_reset.v:3]
+ERROR: [Synth 8-196] conditional expression could not be resolved to a constant [C:/Base/Base.srcs/sources_1/new/reg32_en_reset.v:14]
+ERROR: [Synth 8-6156] failed synthesizing module 'reg32_en_reset' [C:/Base/Base.srcs/sources_1/new/reg32_en_reset.v:3]
+ERROR: [Synth 8-6156] failed synthesizing module 'processor' [C:/Base/Base.srcs/sources_1/new/processor.v:3]
+---------------------------------------------------------------------------------
+Finished Synthesize : Time (s): cpu = 00:00:18 ; elapsed = 00:00:19 . Memory (MB): peak = 3111.910 ; gain = 2633.789
+---------------------------------------------------------------------------------
+synthesize failed
+INFO: [Common 17-83] Releasing license: Synthesis
+16 Infos, 0 Warnings, 0 Critical Warnings and 7 Errors encountered.
+synth_design failed
+ERROR: [Common 17-69] Command failed: Vivado Synthesis failed
+INFO: [Common 17-206] Exiting Vivado at Fri Mar 13 10:09:57 2026...

@@ -28,18 +28,18 @@ generate
     end
 endgenerate
 
-mux2_32bit(B, notB, ALU_OP[0], adderinputB);
-adder(A, adderinputB, ALU_OP[0], adderoutput);
-shifter(A, B[4:0], SRLoutput, SRAoutput, SLLoutput);
-signedcomparator_32bit(A, B, sgreater, snotgreater, sless, snotless, sequal, snotequal);
-unsignedcomparator_32bit(A, B, ugreater, unotgreater, uless, unotless, uequal, unotequal);
-mux2_32bit(zero, one, sless, SLToutput); 
-mux2_32bit(zero, one, uless, SLTUoutput);
-logicunit(A, B, ORoutput, ANDoutput, XORoutput);
-multiplier(A, B, MULoutput, MULHoutput, MULHSUoutput, MULHUoutput);
-divider(A, B, DIVoutput, DIVUoutput, REMoutput, REMUoutput);
+mux2_32bit Mux1(B, notB, ALU_OP[0], adderinputB);
+adder Adder(A, adderinputB, ALU_OP[0], adderoutput);
+shifter Shifter(A, B[4:0], SRLoutput, SRAoutput, SLLoutput);
+signedcomparator_32bit SignedComparator(A, B, sgreater, snotgreater, sless, snotless, sequal, snotequal);
+unsignedcomparator_32bit UnsignedComparator(A, B, ugreater, unotgreater, uless, unotless, uequal, unotequal);
+mux2_32bit Mux2(zero, one, sless, SLToutput); 
+mux2_32bit Mux3(zero, one, uless, SLTUoutput);
+logicunit LogicUnit(A, B, ORoutput, ANDoutput, XORoutput);
+multiplier Multiplier(A, B, MULoutput, MULHoutput, MULHSUoutput, MULHUoutput);
+divider Divider(A, B, DIVoutput, DIVUoutput, REMoutput, REMUoutput);
 
-mux32_32bit(adderoutput, adderoutput, zero, zero, SRLoutput, SRAoutput, SLLoutput, zero, SLToutput, SLTUoutput, zero, zero, ORoutput, ANDoutput, XORoutput, zero, MULoutput, MULHoutput, MULHSUoutput, MULHUoutput, DIVoutput, DIVUoutput, REMoutput, REMUoutput, zero, zero, zero, zero, zero, zero, zero, B, ALU_OP, C); 
+mux32_32bit Mux4(adderoutput, adderoutput, zero, zero, SRLoutput, SRAoutput, SLLoutput, zero, SLToutput, SLTUoutput, zero, zero, ORoutput, ANDoutput, XORoutput, zero, MULoutput, MULHoutput, MULHSUoutput, MULHUoutput, DIVoutput, DIVUoutput, REMoutput, REMUoutput, zero, zero, zero, zero, zero, zero, zero, B, ALU_OP, C); 
 assign EX_STALL = 1'b0;
 
 endmodule

@@ -179,8 +179,8 @@ assign firstselect[0] = IVBits[0];
 or(secondselect, IVBits[2], IVBits[1]);
 or(thirdselect, secondselect, IVBits[0]);
 
-mux4_32bit(SType, BType, UType, JType, firstselect, firstintermediate);
-mux2_32bit(IType, firstintermediate, secondselect, secondintermediate);
-mux2_32bit(32'b00000000000000000000000000000000, secondintermediate, thirdselect, IV);
+mux4_32bit Mux1(SType, BType, UType, JType, firstselect, firstintermediate);
+mux2_32bit Mux2(IType, firstintermediate, secondselect, secondintermediate);
+mux2_32bit Mux3(32'b00000000000000000000000000000000, secondintermediate, thirdselect, IV);
 
 endmodule
