@@ -17,7 +17,7 @@ AND x16, x4, x5
 ADDI x17, x2, 11
 SLLI x18, x4, 17
 SLTI x19, x2, -35
-SLTUI x20, x2, -38
+SLTIU x20, x2, -38
 XORI x21, x1, 57
 SRLI x22, x2, 16
 SRAI x23, x2, 16
