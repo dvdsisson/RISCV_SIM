@@ -3,49 +3,141 @@
    <wave_state>
    </wave_state>
    <db_ref_list>
-      <db_ref path="processor_tb_behav.wdb" id="1">
+      <db_ref path="fc_bias_tb_behav.wdb" id="1">
          <top_modules>
+            <top_module name="fc_bias_tb" />
             <top_module name="glbl" />
-            <top_module name="processor_tb" />
          </top_modules>
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="0.000 ns"></ZoomStartTime>
-      <ZoomEndTime time="456.903 ns"></ZoomEndTime>
-      <Cursor1Time time="126.500 ns"></Cursor1Time>
+      <ZoomStartTime time="366.667 ns"></ZoomStartTime>
+      <ZoomEndTime time="766.667 ns"></ZoomEndTime>
+      <Cursor1Time time="700.000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="169"></NameColumnWidth>
-      <ValueColumnWidth column_width="90"></ValueColumnWidth>
+      <ValueColumnWidth column_width="86"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="7" />
-   <wvobject fp_name="/processor_tb/clock" type="logic">
-      <obj_property name="ElementShortName">clock</obj_property>
-      <obj_property name="ObjectShortName">clock</obj_property>
+   <WVObjectSize size="30" />
+   <wvobject fp_name="/fc_bias_tb/f1/clk" type="logic">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
    </wvobject>
-   <wvobject fp_name="/processor_tb/reset" type="logic">
+   <wvobject fp_name="/fc_bias_tb/f1/isFC" type="logic">
+      <obj_property name="ElementShortName">isFC</obj_property>
+      <obj_property name="ObjectShortName">isFC</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/write" type="logic">
+      <obj_property name="ElementShortName">write</obj_property>
+      <obj_property name="ObjectShortName">write</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/reset" type="logic">
       <obj_property name="ElementShortName">reset</obj_property>
       <obj_property name="ObjectShortName">reset</obj_property>
    </wvobject>
-   <wvobject fp_name="/processor_tb/uut/PC/dataoutput" type="array">
-      <obj_property name="ElementShortName">dataoutput[31:0]</obj_property>
-      <obj_property name="ObjectShortName">dataoutput[31:0]</obj_property>
+   <wvobject fp_name="/fc_bias_tb/f1/banksel" type="logic">
+      <obj_property name="ElementShortName">banksel</obj_property>
+      <obj_property name="ObjectShortName">banksel</obj_property>
    </wvobject>
-   <wvobject fp_name="/processor_tb/uut/alu/A" type="array">
-      <obj_property name="ElementShortName">A[31:0]</obj_property>
-      <obj_property name="ObjectShortName">A[31:0]</obj_property>
+   <wvobject fp_name="/fc_bias_tb/f1/regsel" type="array">
+      <obj_property name="ElementShortName">regsel[1:0]</obj_property>
+      <obj_property name="ObjectShortName">regsel[1:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/processor_tb/uut/alu/B" type="array">
-      <obj_property name="ElementShortName">B[31:0]</obj_property>
-      <obj_property name="ObjectShortName">B[31:0]</obj_property>
+   <wvobject fp_name="/fc_bias_tb/f1/data" type="array">
+      <obj_property name="ElementShortName">data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">data[31:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/processor_tb/uut/alu/ALU_OP" type="array">
-      <obj_property name="ElementShortName">ALU_OP[4:0]</obj_property>
-      <obj_property name="ObjectShortName">ALU_OP[4:0]</obj_property>
+   <wvobject fp_name="/fc_bias_tb/f1/out" type="array">
+      <obj_property name="ElementShortName">out[31:0]</obj_property>
+      <obj_property name="ObjectShortName">out[31:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/processor_tb/uut/alu/C" type="array">
-      <obj_property name="ElementShortName">C[31:0]</obj_property>
-      <obj_property name="ObjectShortName">C[31:0]</obj_property>
+   <wvobject fp_name="/fc_bias_tb/f1/we" type="array">
+      <obj_property name="ElementShortName">we[3:0]</obj_property>
+      <obj_property name="ObjectShortName">we[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/regselinv" type="array">
+      <obj_property name="ElementShortName">regselinv[1:0]</obj_property>
+      <obj_property name="ObjectShortName">regselinv[1:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/invFC" type="logic">
+      <obj_property name="ElementShortName">invFC</obj_property>
+      <obj_property name="ObjectShortName">invFC</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/invbanksel" type="logic">
+      <obj_property name="ElementShortName">invbanksel</obj_property>
+      <obj_property name="ObjectShortName">invbanksel</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/reg1we" type="array">
+      <obj_property name="ElementShortName">reg1we[3:0]</obj_property>
+      <obj_property name="ObjectShortName">reg1we[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/reg1out" type="array">
+      <obj_property name="ElementShortName">reg1out[0:3][31:0]</obj_property>
+      <obj_property name="ObjectShortName">reg1out[0:3][31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/reg2out" type="array">
+      <obj_property name="ElementShortName">reg2out[0:3][31:0]</obj_property>
+      <obj_property name="ObjectShortName">reg2out[0:3][31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/reg3out" type="array">
+      <obj_property name="ElementShortName">reg3out[0:3][31:0]</obj_property>
+      <obj_property name="ObjectShortName">reg3out[0:3][31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/reg1en" type="array">
+      <obj_property name="ElementShortName">reg1en[3:0]</obj_property>
+      <obj_property name="ObjectShortName">reg1en[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/reg1intermediate" type="array">
+      <obj_property name="ElementShortName">reg1intermediate[3:0]</obj_property>
+      <obj_property name="ObjectShortName">reg1intermediate[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/reg2en" type="array">
+      <obj_property name="ElementShortName">reg2en[3:0]</obj_property>
+      <obj_property name="ObjectShortName">reg2en[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/reg3en" type="array">
+      <obj_property name="ElementShortName">reg3en[3:0]</obj_property>
+      <obj_property name="ObjectShortName">reg3en[3:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/reg1override" type="logic">
+      <obj_property name="ElementShortName">reg1override</obj_property>
+      <obj_property name="ObjectShortName">reg1override</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/reg1op" type="array">
+      <obj_property name="ElementShortName">reg1op[31:0]</obj_property>
+      <obj_property name="ObjectShortName">reg1op[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/reg2op" type="array">
+      <obj_property name="ElementShortName">reg2op[31:0]</obj_property>
+      <obj_property name="ObjectShortName">reg2op[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/reg3op" type="array">
+      <obj_property name="ElementShortName">reg3op[31:0]</obj_property>
+      <obj_property name="ObjectShortName">reg3op[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/opB" type="array">
+      <obj_property name="ElementShortName">opB[31:0]</obj_property>
+      <obj_property name="ObjectShortName">opB[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/opC" type="array">
+      <obj_property name="ElementShortName">opC[31:0]</obj_property>
+      <obj_property name="ObjectShortName">opC[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/mac_out" type="array">
+      <obj_property name="ElementShortName">mac_out[0:3][7:0]</obj_property>
+      <obj_property name="ObjectShortName">mac_out[0:3][7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/intermediate_s1" type="array">
+      <obj_property name="ElementShortName">intermediate_s1[1:0][7:0]</obj_property>
+      <obj_property name="ObjectShortName">intermediate_s1[1:0][7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/intermediate_s2" type="array">
+      <obj_property name="ElementShortName">intermediate_s2[7:0]</obj_property>
+      <obj_property name="ObjectShortName">intermediate_s2[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/fc_bias_tb/f1/intermediate_s3" type="array">
+      <obj_property name="ElementShortName">intermediate_s3[7:0]</obj_property>
+      <obj_property name="ObjectShortName">intermediate_s3[7:0]</obj_property>
    </wvobject>
 </wave_config>
