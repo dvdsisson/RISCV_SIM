@@ -1,0 +1,93 @@
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/ALU.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module ALU
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/adder.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module adder
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/arithmeticrightshifter.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module arithmeticrightshifter
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/branchcomparator.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module branchcomparator
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/comparatorblock.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module comparatorblock
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/controlstore.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module controlstore
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/datacache.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module datacache
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/dff_en.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module dff_en
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/divider.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module divider
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/eightbitadder.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module eightbitadder
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/fivebitcomparator.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module fivebitcomparator
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/immediatevaluebuilder.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module immediatevaluebuilder
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/instructioncache.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module instructioncache
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/logicalleftshifter.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module logicalleftshifter
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/logicalrightshifter.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module logicalrightshifter
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/logicunit.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module logicunit
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/memory.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module memory
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/multiplier.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module multiplier
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/mux16_32bit.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module mux16_32bit
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/mux2.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module mux2
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/mux2_32bit.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module mux2_32bit
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/mux32_32bit.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module mux32_32bit
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/mux4.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module mux4
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/mux4_32bit.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module mux4_32bit
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/mux8_32bit.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module mux8_32bit
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/reg32_en.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module reg32_en
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/shifter.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module shifter
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/signedcomparator_32bit.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module signedcomparator_32bit
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/unsignedcomparator_32bit.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module unsignedcomparator_32bit
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/processor.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module processor
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/registerfile.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module registerfile
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/reg32_en_reset.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module reg32_en_reset
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/dff_en_reset.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module dff_en_reset
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/dff_reset.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module dff_reset
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/full_adder.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module full_adder
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/half_adder.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module half_adder
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/forwarding.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module forwarding
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/fivebitdecoder.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module fivebitdecoder
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/branchPred.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module branchPred
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/redand32b.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module redand32b
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/twobittable.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module twobittable
+WARNING: [VRFC 10-9336] redeclaration of ANSI port 'index' is not allowed [C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/twobittable.v:8]
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/shf_reg.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module shf_reg
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/dlatch.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module dlatch
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/regtable.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module regtable
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/processor_df.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module processor_df
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sim_1/new/processor_tb.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module processor_tb

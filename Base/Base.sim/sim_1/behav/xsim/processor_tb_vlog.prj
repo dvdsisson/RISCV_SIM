@@ -36,6 +36,15 @@ verilog xil_defaultlib  \
 "../../../../Base.srcs/sources_1/new/dff_reset.v" \
 "../../../../Base.srcs/sources_1/new/full_adder.v" \
 "../../../../Base.srcs/sources_1/new/half_adder.v" \
+"../../../../Base.srcs/sources_1/new/forwarding.v" \
+"../../../../Base.srcs/sources_1/new/fivebitdecoder.v" \
+"../../../../Base.srcs/sources_1/new/branchPred.v" \
+"../../../../Base.srcs/sources_1/new/redand32b.v" \
+"../../../../Base.srcs/sources_1/new/twobittable.v" \
+"../../../../Base.srcs/sources_1/new/shf_reg.v" \
+"../../../../Base.srcs/sources_1/new/dlatch.v" \
+"../../../../Base.srcs/sources_1/new/regtable.v" \
+"../../../../Base.srcs/sources_1/new/processor_df.v" \
 "../../../../Base.srcs/sim_1/new/processor_tb.v" \
 
 # compile glbl module
