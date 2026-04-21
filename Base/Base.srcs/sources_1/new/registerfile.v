@@ -3,20 +3,22 @@
 module registerfile(
     input [4:0] S1Reg,
     input [4:0] S2Reg,
+    input [4:0] S3Reg,
     input V_WB_LDREG,
     input [4:0] WB_DR,
     input [31:0] WB_DATA,
     input clock,
     output [31:0] S1Value,
     output [31:0] S2Value,
+    output [31:0] S3Value,
     reset
     );
 
 wire DR4, DR3, DR2, DR1, DR0, NOTDR4, NOTDR3, NOTDR2, NOTDR1, NOTDR0;
 wire Reg0Enable, Reg1Enable, Reg2Enable, Reg3Enable, Reg4Enable, Reg5Enable, Reg6Enable, Reg7Enable, Reg8Enable, Reg9Enable, Reg10Enable, Reg11Enable, Reg12Enable, Reg13Enable, Reg14Enable, Reg15Enable, Reg16Enable, Reg17Enable, Reg18Enable, Reg19Enable, Reg20Enable, Reg21Enable, Reg22Enable, Reg23Enable, Reg24Enable, Reg25Enable, Reg26Enable, Reg27Enable, Reg28Enable, Reg29Enable, Reg30Enable, Reg31Enable;
 wire [31:0] Reg0Value, Reg1Value, Reg2Value, Reg3Value, Reg4Value, Reg5Value, Reg6Value, Reg7Value, Reg8Value, Reg9Value, Reg10Value, Reg11Value, Reg12Value, Reg13Value, Reg14Value, Reg15Value, Reg16Value, Reg17Value, Reg18Value, Reg19Value, Reg20Value, Reg21Value, Reg22Value, Reg23Value, Reg24Value, Reg25Value, Reg26Value, Reg27Value, Reg28Value, Reg29Value, Reg30Value, Reg31Value;
-wire [31:0] intermediateone, intermediatetwo; 
-wire equalone, equaltwo, overrideone, overridetwo;
+wire [31:0] intermediateone, intermediatetwo, intermediatethree;
+wire equalone, equaltwo, equalthree, overrideone, overridetwo, overridethree;
 
 assign DR4 = WB_DR[4];
 assign DR3 = WB_DR[3];
@@ -98,13 +100,17 @@ reg32_en_reset Reg31(WB_DATA, clock, Reg31Enable, reset, 32'b0000000000000000000
 
 mux32_32bit Mux1(Reg0Value, Reg1Value, Reg2Value, Reg3Value, Reg4Value, Reg5Value, Reg6Value, Reg7Value, Reg8Value, Reg9Value, Reg10Value, Reg11Value, Reg12Value, Reg13Value, Reg14Value, Reg15Value, Reg16Value, Reg17Value, Reg18Value, Reg19Value, Reg20Value, Reg21Value, Reg22Value, Reg23Value, Reg24Value, Reg25Value, Reg26Value, Reg27Value, Reg28Value, Reg29Value, Reg30Value, Reg31Value, S1Reg, intermediateone);
 mux32_32bit Mux2(Reg0Value, Reg1Value, Reg2Value, Reg3Value, Reg4Value, Reg5Value, Reg6Value, Reg7Value, Reg8Value, Reg9Value, Reg10Value, Reg11Value, Reg12Value, Reg13Value, Reg14Value, Reg15Value, Reg16Value, Reg17Value, Reg18Value, Reg19Value, Reg20Value, Reg21Value, Reg22Value, Reg23Value, Reg24Value, Reg25Value, Reg26Value, Reg27Value, Reg28Value, Reg29Value, Reg30Value, Reg31Value, S2Reg, intermediatetwo);
+mux32_32bit Mux3(Reg0Value, Reg1Value, Reg2Value, Reg3Value, Reg4Value, Reg5Value, Reg6Value, Reg7Value, Reg8Value, Reg9Value, Reg10Value, Reg11Value, Reg12Value, Reg13Value, Reg14Value, Reg15Value, Reg16Value, Reg17Value, Reg18Value, Reg19Value, Reg20Value, Reg21Value, Reg22Value, Reg23Value, Reg24Value, Reg25Value, Reg26Value, Reg27Value, Reg28Value, Reg29Value, Reg30Value, Reg31Value, S3Reg, intermediatethree);
 
 fivebitcomparator FiveBitComparator1(S1Reg, WB_DR, equalone);
 and(overrideone, equalone, V_WB_LDREG);
 fivebitcomparator FiveBitComparator2(S2Reg, WB_DR, equaltwo);
 and(overridetwo, equaltwo, V_WB_LDREG);
+fivebitcomparator FiveBitComparator3(S3Reg, WB_DR, equalthree);
+and(overridethree, equalthree, V_WB_LDREG);
 
-mux2_32bit Mux3(intermediateone, WB_DATA, overrideone, S1Value);
-mux2_32bit Mux4(intermediatetwo, WB_DATA, overridetwo, S2Value);
+mux2_32bit Mux4(intermediateone, WB_DATA, overrideone, S1Value);
+mux2_32bit Mux5(intermediatetwo, WB_DATA, overridetwo, S2Value);
+mux2_32bit Mux6(intermediatethree, WB_DATA, overridethree, S3Value);
 
 endmodule
