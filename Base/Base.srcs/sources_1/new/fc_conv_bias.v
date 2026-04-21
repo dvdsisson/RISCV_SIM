@@ -2,7 +2,7 @@ module fc_conv_bias (
     input clk, start, ready, isFC, isConv,
     input [31:0] data,
     input [31:0] pxl_ptr, ker_ptr, bias_ptr, weight_ptr, out_ptr,
-    input [31:0] max_x, max_y, linesize, max_ch,
+    input [31:0] max_x, max_y, cols, max_ch,
     output [31:0] mem_ptr,
     output mem_req, done,
     output [31:0] out
