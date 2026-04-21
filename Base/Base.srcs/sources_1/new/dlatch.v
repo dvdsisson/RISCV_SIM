@@ -8,10 +8,10 @@ module dlatch(
 
 wire D_bar, S, R, Q_bar;
 
-not (D_bar, D);
-nand (S, D, Enable);
-nand (R, D_bar, Enable);
-nand (Q, S, Q_bar);
-nand (Q_bar, R, Q);
+inv1$ i1 (D_bar, D);
+nand2$ na1 (S, D, Enable);
+nand2$ na2 (R, D_bar, Enable);
+nand2$ na3 (Q, S, Q_bar);
+nand2$ na4 (Q_bar, R, Q);
 
 endmodule

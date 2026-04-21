@@ -8,9 +8,9 @@ module mux2(
     );
 wire notselect, inputzeroand, inputoneand;
 
-not(notselect, select);
-and(inputzeroand, inputzero, notselect);
-and(inputoneand, inputone, select);
-or(finaloutput, inputzeroand, inputoneand);
+inv1$ i1 (notselect, select);
+and2$ a1 (inputzeroand, inputzero, notselect);
+and2$ a2 (inputoneand, inputone, select);
+or2$ o1 (finaloutput, inputzeroand, inputoneand);
 
 endmodule

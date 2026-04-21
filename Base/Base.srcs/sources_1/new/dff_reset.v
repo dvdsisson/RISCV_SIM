@@ -10,7 +10,7 @@ module dff_reset(
 
 wire not_clock, datain_effective, master_q;
 
-not(not_clock, clock);
+inv1$ i1 (not_clock, clock);
 mux2 mux_reset(datainput, resetvalue, reset, datain_effective);
 dlatch master(datain_effective, not_clock, master_q);
 dlatch slave(master_q, clock, dataoutput);

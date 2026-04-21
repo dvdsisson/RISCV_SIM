@@ -25,7 +25,7 @@ module mac_8b (
     generate
         for (i=0; i<4; i=i+1) begin
             multiplier_8b mult1 (a[8*i+7:8*i], b[8*i+7:8*i], multout[i]);
-            or or1 (multoverflow[i], multout[i][14], multout[i][13], multout[i][12], multout[i][11], multout[i][10], multout[i][9], multout[i][8]);
+            redor9b or1 ({2'b0, multout[i][14:8]}, multoverflow[i]);
             mux2_8b mux1 (multout[i][7:0], 8'hFF, multoverflow[i], satout[i]);
         end    
     endgenerate

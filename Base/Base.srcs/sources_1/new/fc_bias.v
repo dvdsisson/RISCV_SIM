@@ -1,5 +1,5 @@
 module fc_bias (
-    input clk, isFC, write, reset, banksel,
+    input clk, isFC, conv_compute, write, reset, ready, banksel,
     input [1:0] regsel,
     input [31:0] data,
     input r3store,
@@ -8,7 +8,6 @@ module fc_bias (
     wire [3:0] we;
     wire [1:0] regselinv;
     wire invFC, invbanksel;
-
 
     genvar i;
     generate
@@ -27,7 +26,7 @@ module fc_bias (
 
     wire [3:0] reg1we;
     generate
-        for (i = 0; i < 2; i = i+1) begin
+        for (i = 0; i < 4; i = i+1) begin
             and2$ a1 (reg1we[i], invFC, we[i]);
         end
     endgenerate
@@ -46,7 +45,7 @@ module fc_bias (
     nor2$ n5 (reg1override, banksel, invFC); //high if bank = 0 & isFC
 
 
-    and2$ a1 (reg1intermediate[0], we[0], invbanksel);
+    // and2$ a1 (reg1intermediate[0], we[0], invbanksel);
     
     generate
         for (i = 1; i < 4; i=i+1) begin
@@ -55,14 +54,23 @@ module fc_bias (
         end
         for (i = 0; i < 4; i=i+1) begin
             and3$ a2 (reg2en[i], we[i], write, banksel);
-            and3$ a3 (reg3en[i], we[i], write, 1'b1); //???
         end
+        for (i = 0; i < 3; i=i+1) begin
+            and3$ a3 (reg3en[i], we[i+1], 1'b1, r3store); //???
+        end
+        and3$ a3p2 (reg3en[3], we[0], 1'b1, r3store); //???
     endgenerate
 
     and3$ a4 (reg1intermediate[0], we[0], invbanksel, write);
     or2$ o1 (reg1en[0], reg1override, reg1intermediate[0]); // bank & we || override
 
     wire [31:0] mathout;
+
+    wire [1:0] mathregsel1, mathregsel;
+
+    assign mathregsel = regsel - 1;
+    assign mathregsel1 = isFC ? 2'b0 : mathregsel; // & {!reg1override, !reg1override};
+
 
     generate
         for (i = 0; i < 4; i = i + 1) begin
@@ -80,9 +88,11 @@ module fc_bias (
     and2$ and10 (regsel1[1], regsel[1], invFC);
     and2$ and11 (regsel1[0], regsel[0], invFC);
 
-    mux4_32bit mux1 (reg1out[0], reg1out[1], reg1out[2], reg1out[3], regsel1, reg1op);
-    mux4_32bit mux2 (reg2out[0], reg2out[1], reg2out[2], reg2out[3], regsel, reg2op);
-    mux4_32bit mux3 (reg3out[0], reg3out[1], reg3out[2], reg3out[3], regsel, reg3op);
+
+
+    mux4_32bit mux1 (reg1out[0], reg1out[1], reg1out[2], reg1out[3], mathregsel1, reg1op);
+    mux4_32bit mux2 (reg2out[0], reg2out[1], reg2out[2], reg2out[3], mathregsel, reg2op);
+    mux4_32bit mux3 (reg3out[0], reg3out[1], reg3out[2], reg3out[3], mathregsel, reg3op);
     
 
     // wire [31:0] opB, opC;
@@ -106,12 +116,20 @@ module fc_bias (
     wire macoverflow;
     mac_8b mac1 (reg1op, reg2op, macout);
     eightbitadder add1 (macout, reg3op, 1'b0, fcaddout, macoverflow);
-    mux2_8b mux4 (macout, 8'hFF, macoverflow, fcout);
+    mux2_8b mux4 (fcaddout, 8'hFF, macoverflow, fcout);
 
     wire [31:0] packaddout;
     packadd pack1 (reg1op, reg2op, packaddout);
 
-    mux2_32bit mux5 (packaddout, {24'b0, macout}, isFC, mathout); //mac out instead of 0
+    mux2_32bit mux5 (packaddout, {24'b0, fcout}, isFC, mathout); //mac out instead of 0
+
+
+    mux2_32bit mux6 (reg3op, {reg3out[3][7:0],reg3out[2][7:0],reg3out[1][7:0],reg3out[0][7:0]}, isFC, out);
+
+
+    wire [71:0] convout;
+
+    convmath Convolution (clk, reset, conv_compute, reg1out[0], reg2out[0], reg2out[1], reg2out[2], reg2out[3], convout);
     
     
 

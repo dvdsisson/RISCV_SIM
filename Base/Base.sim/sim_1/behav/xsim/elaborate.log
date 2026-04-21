@@ -5,13 +5,14 @@ Running: C:/Xilinx/Vivado/2023.2/bin/unwrapped/win64.o/xelab.exe --incr --debug 
 Using 2 slave threads.
 Starting static elaboration
 Pass Through NonSizing Optimizer
+WARNING: [VRFC 10-3091] actual bit length 2 differs from formal bit length 1 for port 'banksel' [C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/fc_conv_bias.V:23]
 WARNING: [VRFC 10-3091] actual bit length 15 differs from formal bit length 16 for port 'out' [C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/mac_8b.v:27]
-WARNING: [VRFC 10-3091] actual bit length 32 differs from formal bit length 8 for port 'B' [C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/fc_bias.v:108]
-WARNING: [VRFC 10-3705] select index 4 into 's3' is out of bounds [C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/multiplier_8b.v:163]
+WARNING: [VRFC 10-3091] actual bit length 32 differs from formal bit length 8 for port 'B' [C:/Users/Musta/Documents/GitHub/RISCV_SIM/Base/Base.srcs/sources_1/new/fc_bias.v:118]
 Completed static elaboration
 Starting simulation data flow analysis
 Completed simulation data flow analysis
 Time Resolution for simulation is 1ps
+Compiling module xil_defaultlib.FSMController
 Compiling module xil_defaultlib.inv1$
 Compiling module xil_defaultlib.nor2$
 Compiling module xil_defaultlib.and2$
@@ -19,23 +20,44 @@ Compiling module xil_defaultlib.nand3$
 Compiling module xil_defaultlib.and3$
 Compiling module xil_defaultlib.or2$
 Compiling module xil_defaultlib.mux2
+Compiling module xil_defaultlib.nand2$
 Compiling module xil_defaultlib.dlatch
 Compiling module xil_defaultlib.dff_reset
 Compiling module xil_defaultlib.dff_en_reset
 Compiling module xil_defaultlib.reg32_en_reset_default
 Compiling module xil_defaultlib.mux4
 Compiling module xil_defaultlib.mux4_32bit_default
+Compiling module xil_defaultlib.xor2$
 Compiling module xil_defaultlib.half_adder
 Compiling module xil_defaultlib.full_adder
+Compiling module xil_defaultlib.or3$
+Compiling module xil_defaultlib.and4$
+Compiling module xil_defaultlib.or4$
+Compiling module xil_defaultlib.and6
+Compiling module xil_defaultlib.and5
+Compiling module xil_defaultlib.nor3$
+Compiling module xil_defaultlib.or6
+Compiling module xil_defaultlib.or5
+Compiling module xil_defaultlib.and9
+Compiling module xil_defaultlib.and7
+Compiling module xil_defaultlib.or9
+Compiling module xil_defaultlib.or7
+Compiling module xil_defaultlib.and8
+Compiling module xil_defaultlib.or8
 Compiling module xil_defaultlib.eightbitadder
 Compiling module xil_defaultlib.adder
 Compiling module xil_defaultlib.multiplier_8b_default
+Compiling module xil_defaultlib.redor9b
 Compiling module xil_defaultlib.mux2_8b_default
 Compiling module xil_defaultlib.compressionadder_default
 Compiling module xil_defaultlib.mac_8b_default
 Compiling module xil_defaultlib.packadd_default
 Compiling module xil_defaultlib.mux2_32bit_default
+Compiling module xil_defaultlib.satadd
+Compiling module xil_defaultlib.dff_8b_default
+Compiling module xil_defaultlib.convmath_default
 Compiling module xil_defaultlib.fc_bias_default
+Compiling module xil_defaultlib.fc_conv_bias
 Compiling module xil_defaultlib.fc_bias_tb
 Compiling module xil_defaultlib.glbl
 Built simulation snapshot fc_bias_tb_behav

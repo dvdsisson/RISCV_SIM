@@ -7,7 +7,7 @@ module half_adder(
     output Carry
     );
     
-xor(Sum, A, B);
-and(Carry, A, B); 
+xor2$ x1 (Sum, A, B);
+and2$ a1 (Carry, A, B); 
     
 endmodule

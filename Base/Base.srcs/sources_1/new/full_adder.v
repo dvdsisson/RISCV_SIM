@@ -9,15 +9,15 @@ module full_adder(
     );
     
 wire inter_s;
-xor(inter_s, A, B);
-xor(Sum, inter_s, Cin);
+xor2$ x1 (inter_s, A, B);
+xor2$ x2 (Sum, inter_s, Cin);
     
 wire a_1;
-and(a_1, A, B);
+and2$ a1 (a_1, A, B);
     
 wire a_2;
-and(a_2, inter_s, Cin);
+and2$ a2 (a_2, inter_s, Cin);
     
-or(Cout, a_1, a_2);
+or2$ o1 (Cout, a_1, a_2);
     
 endmodule

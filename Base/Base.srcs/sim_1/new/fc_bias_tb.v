@@ -25,79 +25,95 @@ module fc_bias_tb(
     );
 
     reg clk = 0;
-    always #5 clk = ~clk;
+    always #10 clk = ~clk;
 
-    reg isFC, write, reset, banksel;
+    reg isFC, isConv, write, banksel, start;
     reg [1:0] regsel;
     reg [31:0] data; 
-    reg r3write;
+    wire r3write;
     wire [31:0] out;
+    reg ready = 0;
     
-    fc_bias f1 (clk, isFC, write, reset, banksel, regsel, data, r3write, out);
     
+    reg [31:0] max_x = 8;
+    reg [31:0] max_y = 8;
+    
+    reg [31:0] linesize = 8;
+    reg [31:0] pxl_ptr, ker_ptr, bias_ptr, weight_ptr, out_ptr, max_ch;
+    
+    
+    
+    wire reset;
+    
+    wire fc_write, r3write, conv_computer, done, mem_req;
+    
+    wire [31:0] mem_ptr;
+    wire [1:0] banksel, colsel, regsel;
+    
+    fc_conv_bias fcblock (clk, start, ready, isFC, isConv, data, pxl_ptr, ker_ptr, bias_ptr, weight_ptr, out_ptr, max_x, max_y, linesize, max_ch);
     initial begin
-        isFC = 0;
-        write = 0;
-        reset = 1;
-        banksel = 0;
-        regsel = 0;
-        r3write = 1;
-        #20
-        reset = 0;
-        write = 1;
-        banksel = 0;
-        regsel = 0;
-        data = 32'h100;
-        #10
-        banksel = 1;
-        regsel = 2;
-        data = 32'h300;
-        #10
-        banksel = 0;
-        regsel = 2;
-        data = 32'h410;
-        #10
-        banksel = 1;
-        regsel = 3;
-        data = 32'h502;
-        #10
-        banksel = 1;
-        regsel = 2;
-        data = 32'h680;
-        #10
-        
-        
-        
-        
-        
+        max_ch = 1;
         isFC = 1;
+        isConv = 1;
         write = 0;
-        reset = 1;
-        banksel = 0;
-        regsel = 0;
-        #20
-        reset = 0;
-        write = 1;
-        banksel = 0;
-        regsel = 0;
+//        banksel = 0;
+//        regsel = 0;
+        #40
+        start = 1;
+//        banksel = 0;
+//        regsel = 0;
         data = 32'h100;
-        #10
-        banksel = 1;
-        regsel = 2;
-        data = 32'h300;
-        #10
-        banksel = 0;
-        regsel = 0;
-        data = 32'h410;
-        #10
-        banksel = 1;
-        regsel = 3;
-        data = 32'h502;
-        #10
-        banksel = 1;
-        regsel = 2;
-        data = 32'h680;
-        #10
+        #20
+        start = 0;
+//        banksel = 1;
+//        regsel = 2;
+//        data = 32'h300;
+        #20
+          ready = 1;
+        
+//        banksel = 0;
+//        regsel = 2;
+//        data = 32'h410;
+        #20
+//        banksel = 1;
+//        regsel = 3;
+//        data = 32'h502;
+        #20
+//        banksel = 1;
+//        regsel = 2;
+//        data = 32'h101;
+        #1000
+        
+        
+        
+        
+        
+//        isFC = 1;
+//        write = 0;
+//        banksel = 0;
+//        regsel = 0;
+//        #20
+//        write = 1;
+//        banksel = 0;
+//        regsel = 0;
+//        data = 32'h100;
+//        #10
+//        banksel = 1;
+//        regsel = 2;
+//        data = 32'h300;
+//        #10
+//        banksel = 0;
+//        regsel = 0;
+//        data = 32'h410;
+//        #10
+//        banksel = 1;
+//        regsel = 3;
+//        data = 32'h502;
+//        #10
+//        banksel = 1;
+//        regsel = 2;
+//        data = 32'h680;
+//        #10
         $finish;
         
         

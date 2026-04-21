@@ -12,10 +12,12 @@ module multiplier_8b (
     generate
         for (i=0; i<8; i=i+1) begin
             for (j=0; j+i<8; j=j+1) begin
-                assign s1[i+j][i] = a[i] * b[j];
+                //assign s1[i+j][i] = a[i] * b[j];
+                and2$ s0a1 (s1[i+j][i], a[i], b[j]);
             end
             for (j=8-i; j<8; j=j+1) begin
-                assign s1[i+j][7-i] = a[i] * b[j];
+                //assign s1[i+j][7-i] = a[i] * b[j];
+                and2$ s0a2 (s1[i+j][7-i], a[i], b[j]);
             end
         end
     endgenerate
@@ -159,8 +161,8 @@ module multiplier_8b (
         end
     endgenerate
 
-    assign s4[3][2] = s3[3][2];
-    half_adder s4ha1 (s3[3][3], s3[3][4], s4[3][1], s4[4][1]);
+    assign s4[3][2] = s3[3][1];
+    half_adder s4ha1 (s3[3][2], s3[3][3], s4[3][1], s4[4][1]);
 
     generate
         for (i=4; i<13; i=i+1) begin

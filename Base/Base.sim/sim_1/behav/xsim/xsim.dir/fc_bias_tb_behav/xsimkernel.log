@@ -1,4 +1,4 @@
-Running: xsim.dir/fc_bias_tb_behav/xsimk.exe -simmode gui -wdb fc_bias_tb_behav.wdb -simrunnum 0 -socket 62614
+Running: xsim.dir/fc_bias_tb_behav/xsimk.exe -simmode gui -wdb fc_bias_tb_behav.wdb -simrunnum 0 -socket 55026
 Design successfully loaded
-Design Loading Memory Usage: 19124 KB (Peak: 19124 KB)
-Design Loading CPU Usage: 62 ms
+Design Loading Memory Usage: 71192 KB (Peak: 71192 KB)
+Design Loading CPU Usage: 280 ms
