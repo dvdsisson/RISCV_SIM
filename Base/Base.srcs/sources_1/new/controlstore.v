@@ -11,6 +11,7 @@ wire [31:0] LS0, LS1, LS2, LS3, LS4, LS5, LS6, LS7, LS8, LS9, LS10, LS11, LS12, 
 wire [31:0] BR0, BR1, BR2, BR3, BR4, BR5, BR6, BR7;
 wire [31:0] AC0, AC1;
 wire [31:0] JMP0, JMP1;
+wire [31:0] AUGMENT0, AUGMENT1, AUGMENT2, AUGMENT3;
 
 wire [4:0] ALUSelect;
 wire [2:0] MDSelect;
@@ -23,7 +24,7 @@ wire [31:0] ALUOutput, MDOutput, LSOutput, BROutput, ACOutput, JMPOutput;
 
 wire notOP0, notOP1, notOP2, notOP3, notOP4, notOP5, notOP6, notfunc0, notfunc1, notfunc2;
 wire one, two, three, four, five;
-wire [31:0] six, seven, eight, nine;
+wire [31:0] six, seven, eight, nine, ten, eleven, twelve, thirteen;
 
 not(notOP0, IR[0]);
 not(notOP1, IR[1]);
@@ -132,6 +133,11 @@ assign AC1 = 32'b00000000001000101111110000000010;
 assign JMP0 = 32'b00000000100011110000000111000000;
 assign JMP1 = 32'b00000000001011100000000111000000;
 
+assign AUGMENT0 = 32'b11000000110000000000000000000000;
+assign AUGMENT1 = 32'b10101100110000000000000000000000;
+assign AUGMENT2 = 32'b10111010110000000000000000000000;
+assign AUGMENT3 = 32'b10111001110000000000000000000000;
+
 mux32_32bit Mux1(ALU0, ALU1, ALU2, ALU3, ALU4, ALU5, ALU6, ALU7, ALU8, ALU9, ALU10, ALU11, ALU12, ALU13, ALU14, ALU15, ALU16, ALU17, ALU18, ALU19, ALU20, ALU21, ALU22, ALU23, ALU24, ALU25, ALU26, ALU27, ALU28, ALU29, ALU30, ALU31, ALUSelect, ALUOutput);
 mux8_32bit Mux2(MD0, MD1, MD2, MD3, MD4, MD5, MD6, MD7, MDSelect, MDOutput);
 mux16_32bit Mux3(LS0, LS1, LS2, LS3, LS4, LS5, LS6, LS7, LS8, LS9, LS10, LS11, LS12, LS13, LS14, LS15, LSSelect, LSOutput);
@@ -145,6 +151,14 @@ mux2_32bit Mux7(LSOutput, BROutput, IR[6], six);
 mux2_32bit Mux8(ALUOutput, MDOutput, four, seven);
 mux2_32bit Mux9(six, seven, five, eight);
 mux2_32bit Mux10(JMPOutput, ACOutput, IR[4], nine);
-mux2_32bit Mux11(eight, nine, IR[2], CS);
+mux2_32bit Mux11(eight, nine, IR[2], ten);
+
+wire augmented;
+and(augmented, IR[3], IR[4], IR[5], IR[6]);
+mux2_32bit Mux12(AUGMENT0, AUGMENT1, IR[0], eleven);
+mux2_32bit Mux13(AUGMENT2, AUGMENT3, IR[0], twelve);
+mux2_32bit Mux14(eleven, twelve, IR[1], thirteen);
+
+mux2_32bit Mux15(ten, thirteen, augmented, CS);
 
 endmodule

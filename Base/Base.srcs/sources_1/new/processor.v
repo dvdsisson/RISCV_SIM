@@ -9,8 +9,8 @@ wire LD_ID, LD_EX, LD_MEM, LD_WB;
 wire DEP_STALL, EX_STALL, MEM_STALL, ID_BR_STALL, EX_BR_STALL;
 wire [31:0] ID_PC_Input, ID_PC_Output, ID_IR_Input, ID_IR_Output;
 wire ID_VALID_Input, ID_VALID_Output;
-wire [31:0] REG_SR1_OUT, REG_SR2_OUT;
-wire [31:0] EX_PC_Input, EX_PC_Output, EX_IV_Input, EX_IV_Output, EX_SR1_Input, EX_SR1_Output, EX_SR2_Input, EX_SR2_Output, EX_DR_Input, EX_DR_Output, EX_CS_Input, EX_CS_Output;
+wire [31:0] REG_SR1_OUT, REG_SR2_OUT, REG_SR3_OUT;
+wire [31:0] EX_PC_Input, EX_PC_Output, EX_IV_Input, EX_IV_Output, EX_SR1_Input, EX_SR1_Output, EX_SR2_Input, EX_SR2_Output, EX_SR3_Input, EX_SR3_Output, EX_DR_Input, EX_DR_Output, EX_CS_Input, EX_CS_Output;
 wire EX_VALID_Input, EX_VALID_Output;
 wire [31:0] MEM_PC_Input, MEM_PC_Output, MEM_TA_Input, MEM_TA_Output, MEM_ALU_Input, MEM_ALU_Output, MEM_DR_Input, MEM_DR_Output, MEM_CS_Input, MEM_CS_Output;
 wire MEM_VALID_Input, MEM_VALID_Output;
@@ -66,8 +66,8 @@ dff_en ID_bp_taken(bp_pred_taken, clock, LD_ID, ID_bp_taken_Output);
 
 // INSTRUCTION DECODE
 // ------------------------------------------------------------------------------
-wire [4:0] S1Reg, S2Reg;
-wire SR1_Needed, SR2_Needed;
+wire [4:0] S1Reg, S2Reg, S3Reg;
+wire SR1_Needed, SR2_Needed, SR3_Needed;
 wire i5, i6, i7, i8, i9, i10;
 wire i11, i12, i13, i14, i15, i16;
 wire i17, i18;
@@ -76,25 +76,28 @@ wire [4:0] EX_bp_table_index;
 wire EX_bp_taken_Output;
 
 assign S1Reg = ID_IR_Output[19:15];
-assign S2Reg = ID_IR_Output[24:20]; 
+mux2_32bit Mux6(ID_IR_Output[24:20], ID_IR_Output[11:7], EX_CS_Input[31], S2Reg);
+assign S3Reg = ID_IR_Output[24:20];
 assign EX_DR_Input = {27'b0, ID_IR_Output[11:7]};
 
 assign EX_PC_Input = ID_PC_Output;
 immediatevaluebuilder ImmediateValueBuilder(ID_IR_Output, EX_CS_Input[21:19], EX_IV_Input);
-registerfile RegisterFile(S1Reg, S2Reg, V_WB_LDREG, WB_DR, WB_DATA, clock, REG_SR1_OUT, REG_SR2_OUT, reset);
+registerfile RegisterFile(S1Reg, S2Reg, S3Reg, V_WB_LDREG, WB_DR, WB_DATA, clock, REG_SR1_OUT, REG_SR2_OUT, REG_SR3_OUT, reset);
 controlstore ControlStore(ID_IR_Output, EX_CS_Input);
 
 assign SR1_Needed = EX_CS_Input[23];
 assign SR2_Needed = EX_CS_Input[22];
-
+assign SR3_Needed = EX_CS_Input[29];
 // Data Forwarding
 
 wire [31:0] EX_DATA_OUT, MEM_DATA_OUT, WB_DATA_OUT;
 
-wire dep_stall_r1, dep_stall_r2; 
+wire dep_stall_r1, dep_stall_r2, dep_stall_r3; 
 wire v_ex_df;
 
-and(v_ex_df, V_EX_LDREG, EX_CS_Input[16]); //CS col 16? is TA MUX (using ALU vs MEM result)
+and(v_ex_df, V_EX_LDREG, EX_CS_Input[5]); 
+
+if load in execute
 
 forwarding df1 (S1Reg, 
 V_EX_LDREG,  EX_DR,  v_ex_df,        EX_DATA_OUT,
@@ -110,8 +113,12 @@ V_WB_LDREG,  WB_DR,  V_WB_LDREG,     WB_DATA_OUT,
 REG_SR2_OUT,
 dep_stall_r2, EX_SR2_Input);
 
-
-
+forwarding df3 (S3Reg, 
+V_EX_LDREG,  EX_DR,  v_ex_df,        EX_DATA_OUT,
+V_MEM_LDREG, MEM_DR, WB_VALID_Input, MEM_DATA_OUT,
+V_WB_LDREG,  WB_DR,  V_WB_LDREG,     WB_DATA_OUT,
+REG_SR3_OUT,
+dep_stall_r3, EX_SR3_Input);
 
 // fivebitcomparator FiveBitComparator1(S1Reg, EX_DR, i5);
 // fivebitcomparator FiveBitComparator2(S1Reg, MEM_DR, i6);
@@ -128,7 +135,7 @@ dep_stall_r2, EX_SR2_Input);
 // and(i16, i10, V_WB_LDREG, SR2_Needed, ID_VALID_Output);
 // or(DEP_STALL, i11, i12, i13, i14, i15, i16);
 
-and(DEP_STALL, dep_stall_r1, dep_stall_r2);
+and(DEP_STALL, dep_stall_r1, dep_stall_r2, dep_stall_r3);
 
 and(ID_BR_STALL, ID_VALID_Output, EX_CS_Input[18]);
 not(i17, DEP_STALL);
@@ -141,6 +148,7 @@ reg32_en EX_PC(EX_PC_Input, clock, LD_EX, EX_PC_Output);
 reg32_en EX_IV(EX_IV_Input, clock, LD_EX, EX_IV_Output);
 reg32_en EX_SR1(EX_SR1_Input, clock, LD_EX, EX_SR1_Output);
 reg32_en EX_SR2(EX_SR2_Input, clock, LD_EX, EX_SR2_Output);
+reg32_en EX_SR3(EX_SR3_Input, clock, LD_EX, EX_SR3_Output);
 reg32_en EX_DR1(EX_DR_Input, clock, LD_EX, EX_DR_Output);
 reg32_en EX_CS(EX_CS_Input, clock, LD_EX, EX_CS_Output);
 dff_en EX_VALID(EX_VALID_Input, clock, LD_EX, EX_VALID_Output);
