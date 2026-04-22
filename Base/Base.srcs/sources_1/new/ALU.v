@@ -37,7 +37,7 @@ mux2_32bit Mux2(zero, one, sless, SLToutput);
 mux2_32bit Mux3(zero, one, uless, SLTUoutput);
 logicunit LogicUnit(A, B, ORoutput, ANDoutput, XORoutput);
 multiplier Multiplier(A, B, MULoutput, MULHoutput, MULHSUoutput, MULHUoutput);
-divider Divider(A, B, DIVoutput, DIVUoutput, REMoutput, REMUoutput);
+//divider Divider(A, B, DIVoutput, DIVUoutput, REMoutput, REMUoutput);
 
 mux32_32bit Mux4(adderoutput, adderoutput, zero, zero, SRLoutput, SRAoutput, SLLoutput, zero, SLToutput, SLTUoutput, zero, zero, ORoutput, ANDoutput, XORoutput, zero, MULoutput, MULHoutput, MULHSUoutput, MULHUoutput, DIVoutput, DIVUoutput, REMoutput, REMUoutput, zero, zero, zero, zero, zero, zero, zero, B, ALU_OP, C); 
 assign EX_STALL = 1'b0;

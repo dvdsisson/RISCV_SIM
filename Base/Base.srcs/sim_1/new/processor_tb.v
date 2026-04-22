@@ -40,11 +40,33 @@ module processor_tb;
         #100;
         reset = 0;
 
-        // Loading Program Into Memory (INPUT DESIRED PROGRAM FILE HERE)
-        $readmemh("program.mem", uut.Memory.mem_array, 16'h3000);
-        // Loading Data Files Into Memory (INPUT DESIRED DATA FILE HERE)
-	$readmemh("data.mem", uut.Memory.mem_array, 16'h1000);
-	//$readmemh("data2.mem", uut.Memory.mem_array, 16'h4000);
+
+        // Base
+        $readmemh("test3.mem", uut.Memory.mem_array, 16'h3000);
+
+        // IPP
+        //$readmemh("ipp.mem", uut.Memory.mem_array, 16'h3000);
+	//$readmemh("ippdataone.mem", uut.Memory.mem_array, 16'h1000);
+
+        // CONV
+        //$readmemh("conv.mem", uut.Memory.mem_array, 16'h3000);
+	//$readmemh("convdataone.mem", uut.Memory.mem_array, 16'h2000);
+	//$readmemh("convdatatwo.mem", uut.Memory.mem_array, 16'h4000);
+
+        // BADD
+        //$readmemh("badd.mem", uut.Memory.mem_array, 16'h3000);
+	//$readmemh("badddataone.mem", uut.Memory.mem_array, 16'h2000);
+	//$readmemh("badddatatwo.mem", uut.Memory.mem_array, 16'h4000);
+
+        // FC
+        //$readmemh("fc.mem", uut.Memory.mem_array, 16'h3000);
+	//$readmemh("fcdataone.mem", uut.Memory.mem_array, 16'h2000);
+	//$readmemh("fcdatatwo.mem", uut.Memory.mem_array, 16'h4000);
+
+        // Full Image
+        //$readmemh("program.mem", uut.Memory.mem_array, 16'h3000);
+	//$readmemh("image.mem", uut.Memory.mem_array, 16'h1000);
+	//$readmemh("weights.mem", uut.Memory.mem_array, 16'h4000);
 
         // Releasing Pipeline Signals Now In Control Of Pipeline
 	
@@ -73,7 +95,7 @@ module processor_tb;
 
 	release uut.V_WB_LDREG;
 	release uut.WB_DR;
-        #250; // INPUT DESIRED RUNTIME IN NANOSECONDS HERE
+        #25000; // INPUT DESIRED RUNTIME IN NANOSECONDS HERE
 
         $finish;
 

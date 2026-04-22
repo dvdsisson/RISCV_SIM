@@ -1,13 +1,16 @@
 module fc_bias (
-    input clk, isFC, conv_compute, write, reset, ready, banksel,
-    input [1:0] regsel,
+    input clk, isFC, isConv, conv_compute, write, reset, ready, banksel,
+    input [1:0] colsel, regsel,
     input [31:0] data,
-    input r3store,
+    input r3store, convreset,
     output [31:0] out
 );
     wire [3:0] we;
     wire [1:0] regselinv;
     wire invFC, invbanksel;
+
+    // wire convreset;
+    // assign convreset = 1'b0;
 
     genvar i;
     generate
@@ -132,15 +135,42 @@ module fc_bias (
 
     // mux2_32bit mux6 (reg3op, r3outs, isFC, out);
 
-    mux4_32bit mux6 (mathout, mathout, 32'b0, r3outs, {1'b0, isFC}, out);
+    
 
     //assign out = mathout;
 
+    wire [71:0] convout_concat;
+    wire [7:0] convout [0:8];
+    assign {convout[0], convout[1], convout[2], convout[3], convout[4], convout[5], convout[6], convout[7], convout[8]} = convout_concat;
 
-    wire [71:0] convout;
-
-    convmath Convolution (clk, reset, conv_compute, reg1out[0], reg2out[0], reg2out[1], reg2out[2], reg2out[3], convout);
     
+    wire convresetmath;
+
+    or (convresetmath, reset, convreset);
+
+    convmath Convolution (clk, convresetmath, conv_compute, reg1out[0], reg2out[0], reg2out[1], reg2out[2], reg2out[3], convout_concat);
+
+
+    wire [31:0] ex_convout [0:8];
+    wire [31:0] convolution_out;
+
+    generate
+        for (i = 0; i<9; i=i+1) begin
+            assign ex_convout[i] = {24'b0, convout[i]};
+        end
+    endgenerate
+
+    mux16_32bit muxconv (
+        ex_convout[2], ex_convout[1], ex_convout[0], 32'b0, 
+        ex_convout[5], ex_convout[4], ex_convout[3], 32'b0,
+        ex_convout[8], ex_convout[7], ex_convout[6], 32'b0,
+        32'b0, 32'b0, 32'b0, 32'b0,
+        convmuxsel[3:0], convolution_out
+        );
+
+    wire [7:0] convmuxsel;
+    dff_8b seldff ({4'b0, colsel, regsel}, clk, 1'b1, 1'b0, convmuxsel);
+    mux2_32bit mux6 (mathout, {24'b0, convolution_out[7:0]}, isConv, out);
     
 
 endmodule

@@ -7,7 +7,7 @@ module FSMController (
     output reg [31:0] mem_ptr,
     output reg [1:0] banksel, colsel, regsel,
     output reg done, mem_wr,
-    output reg write_byte
+    output reg write_byte, convreset
 );
 
     reg [4:0] state;
@@ -46,7 +46,26 @@ module FSMController (
                     reset <= 0;
                     r3write <=0;
                     banksel <= 0;
-                    if (!isFC) begin
+                    convreset <= 0;
+                    if (isFC) begin
+                        
+                        state <= 5'b01100;
+                        write_byte <= 0;
+                        // vert <= max_x;
+                        // hor <= 1;
+                        x <= 0;
+                        y <= 0;
+                    end else if (isConv) begin
+                        x <= 0;
+                        y <= 0;
+                        conv_compute <= 0;
+                        write_byte <= 1;
+                        state <= 5'b11111;
+                        mem_wr <= 0;
+                        ch <= 0;
+                        
+                    end else begin
+                        // bias add
                         state <= 5'b00100;
                         write_byte <= 0;
                         // vert <= 1;
@@ -57,19 +76,6 @@ module FSMController (
                         // mem_ptr <= pxl_ptr + x + regsel;
                         // mem_wr <= 0;
                         // write_allowed <= 1;
-                    end else if (!isConv) begin
-                        state <= 5'b01100;
-                        write_byte <= 0;
-                        // vert <= max_x;
-                        // hor <= 1;
-                        x <= 0;
-                        y <= 0;
-                    end else begin
-                        x <= 0;
-                        y <= 0;
-                        conv_compute <= 0;
-                        write_byte <= 1;
-                        state <= 5'b10000;
                     end
                 end else reset <= 1;
             end
@@ -263,35 +269,44 @@ module FSMController (
 
             // Convolution
             5'b10000: begin
-                mem_ptr <= ker_ptr + ch;
+                mem_ptr <= ker_ptr + 4 * ch;
                 mem_wr <= 0;
                 banksel <= 0;
+                regsel <= 0;
                 conv_compute <= 0;
                 write_allowed <= 1;
+                convreset <=0;
                 state = 5'b10001;
-                banksel <= 1;
                 // if (x+1 == max_x) begin
                 //     x <= 0;
                 //     y <= y+4;
                 //     if (y >= max_y) state = 2;
                 // end
+                // banksel <= 0;
+                // regsel <= 0;
+                // mem_wr <= 0;
+                // write_allowed <= 1;
+                
             end
 
             5'b10001: begin
-                mem_ptr <= weight_ptr + max_x * (y + regsel) + x;
+                mem_ptr <= pxl_ptr + cols * (y + regsel) + x;
                 regsel <= regsel+1;
+                banksel <= 1;
+
                 // fc_write <= 1;
-                if (regsel == 3) begin //increment y
+                if (regsel+1 == 4) begin //increment y
                     state = 5'b10010;
-                    regsel <= 0; // May have issues with regsel overflow
+                     // May hav     e issues with regsel overflow
                 end
             end
 
 
-
             5'b10010: begin
                 conv_compute <= 1;
-                if (ch < max_ch) begin
+                write_allowed <= 0;
+                regsel <= 0;
+                if (ch+1 < max_ch) begin
                     ch <= ch+1;
                     state = 5'b10000;
                 end else begin
@@ -300,32 +315,44 @@ module FSMController (
                 end
             end
             5'b10011: begin
-                ch <= 0;
-                conv_compute <= 0;
-                mem_ptr <= out_ptr + cols * (y + colsel) + x + regsel;
+                conv_compute <=0;
                 mem_wr <= 1;
-                if (regsel >= 3 && colsel >= 3) begin
+                if (regsel+1 >= 3 && colsel+1 >= 3) begin
                     regsel <= 0;
                     colsel <= 0;
-                    state = 5'b10100;
-                end else if (regsel >= 3) begin
-                    colsel <= colsel + 1;
+                    mem_ptr <= out_ptr + (cols-1) * (y + colsel) + x + regsel;
+                    state <= 5'b10100;
+                end else if (regsel+1 >= 3) begin
+                    colsel <= colsel+1;
                     regsel <= 0;
                 end else begin
                     regsel <= regsel + 1;
                 end
+                mem_ptr <= out_ptr + (cols-1) * (y + colsel) + x + regsel;
             end
             5'b10100: begin
-                if (x >= max_x && y >= max_y) begin
+                convreset <= 1;
+                mem_wr <= 0;
+                ch <= 0;
+                if (x+1 >= max_x && y+1 >= max_y) begin
                     state <= 5'b00000;
-                end else if (x >= max_x) begin
+                end else if (x+1 >= max_x) begin
                     x <= 0;
                     y <= y + 1;
                     state <= 5'b10000;
                 end else begin
                     x <= x + 1;
+                    state <= 5'b10000;
                 end
 
+            end
+            5'b11110: begin
+                state <= 5'b11111;
+                mem_ptr <= ker_ptr + 4 * ch;
+            end
+            5'b11111: begin
+                state <= 5'b10000;
+                mem_ptr <= ker_ptr + 4 * ch;
             end
 
         endcase

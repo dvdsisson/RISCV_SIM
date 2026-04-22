@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="849.528 ns"></ZoomStartTime>
-      <ZoomEndTime time="886.709 ns"></ZoomEndTime>
-      <Cursor1Time time="875.000 ns"></Cursor1Time>
+      <ZoomStartTime time="730.700 ns"></ZoomStartTime>
+      <ZoomEndTime time="781.845 ns"></ZoomEndTime>
+      <Cursor1Time time="409.781 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="190"></NameColumnWidth>
-      <ValueColumnWidth column_width="146"></ValueColumnWidth>
+      <ValueColumnWidth column_width="140"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="21" />
+   <WVObjectSize size="19" />
    <wvobject fp_name="/processor_tb/clock" type="logic">
       <obj_property name="ElementShortName">clock</obj_property>
       <obj_property name="ObjectShortName">clock</obj_property>
@@ -197,8 +197,6 @@
          <obj_property name="ElementShortName">Reg31Value[31:0]</obj_property>
          <obj_property name="ObjectShortName">Reg31Value[31:0]</obj_property>
       </wvobject>
-   </wvobject>
-   <wvobject type="divider" fp_name="divider146">
    </wvobject>
    <wvobject fp_name="group176" type="group">
       <obj_property name="label">David</obj_property>
@@ -713,6 +711,8 @@
          <obj_property name="ObjectShortName">mem_addr_full[31:0]</obj_property>
       </wvobject>
    </wvobject>
+   <wvobject type="divider" fp_name="divider146">
+   </wvobject>
    <wvobject fp_name="group193" type="group">
       <obj_property name="label">Ryan</obj_property>
       <obj_property name="DisplayName">label</obj_property>
@@ -797,28 +797,20 @@
       <wvobject type="divider" fp_name="divider200">
       </wvobject>
    </wvobject>
-   <wvobject fp_name="/processor_tb/uut/FC/f1/mac1/a" type="array">
-      <obj_property name="ElementShortName">a[31:0]</obj_property>
-      <obj_property name="ObjectShortName">a[31:0]</obj_property>
+   <wvobject fp_name="/processor_tb/uut/FC/mem_ptr" type="array">
+      <obj_property name="ElementShortName">mem_ptr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">mem_ptr[31:0]</obj_property>
    </wvobject>
-   <wvobject fp_name="/processor_tb/uut/FC/f1/mac1/b" type="array">
-      <obj_property name="ElementShortName">b[31:0]</obj_property>
-      <obj_property name="ObjectShortName">b[31:0]</obj_property>
+   <wvobject fp_name="/processor_tb/uut/FC/mem_wr" type="logic">
+      <obj_property name="ElementShortName">mem_wr</obj_property>
+      <obj_property name="ObjectShortName">mem_wr</obj_property>
    </wvobject>
-   <wvobject fp_name="/processor_tb/uut/FC/f1/mac1/out" type="array">
-      <obj_property name="ElementShortName">out[7:0]</obj_property>
-      <obj_property name="ObjectShortName">out[7:0]</obj_property>
+   <wvobject fp_name="/processor_tb/uut/FC/done" type="logic">
+      <obj_property name="ElementShortName">done</obj_property>
+      <obj_property name="ObjectShortName">done</obj_property>
    </wvobject>
-   <wvobject fp_name="/processor_tb/uut/FC/f1/mac1/multout" type="array">
-      <obj_property name="ElementShortName">multout[0:3][14:0]</obj_property>
-      <obj_property name="ObjectShortName">multout[0:3][14:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/processor_tb/uut/FC/f1/mac1/multoverflow" type="array">
-      <obj_property name="ElementShortName">multoverflow[3:0]</obj_property>
-      <obj_property name="ObjectShortName">multoverflow[3:0]</obj_property>
-   </wvobject>
-   <wvobject fp_name="/processor_tb/uut/FC/f1/mac1/satout" type="array">
-      <obj_property name="ElementShortName">satout[0:3][7:0]</obj_property>
-      <obj_property name="ObjectShortName">satout[0:3][7:0]</obj_property>
+   <wvobject fp_name="/processor_tb/uut/FC/out" type="array">
+      <obj_property name="ElementShortName">out[31:0]</obj_property>
+      <obj_property name="ObjectShortName">out[31:0]</obj_property>
    </wvobject>
 </wave_config>

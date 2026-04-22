@@ -17,10 +17,10 @@ module fc_conv_bias (
 //     output reg done, mem_req
 
 
-    wire reset, fc_write, r3write, conv_compute;
+    wire reset, fc_write, r3write, conv_compute, convreset;
     wire [1:0] banksel, colsel, regsel;
 
-    FSMController fsm (isFC, isConv, clk, start, max_x, max_y, size, cols, pxl_ptr, ker_ptr, bias_ptr, weight_ptr, out_ptr, max_ch, reset, fc_write, r3write, conv_compute, mem_ptr, banksel, colsel, regsel, done, mem_wr, write_byte);
-    fc_bias f1 (clk, isFC, conv_compute, fc_write, reset, ready, banksel, regsel, data, r3write, out);
+    FSMController fsm (isFC, isConv, clk, start, max_x, max_y, size, cols, pxl_ptr, ker_ptr, bias_ptr, weight_ptr, out_ptr, max_ch, reset, fc_write, r3write, conv_compute, mem_ptr, banksel, colsel, regsel, done, mem_wr, write_byte, convreset);
+    fc_bias f1 (clk, isFC, isConv, conv_compute, fc_write, reset, ready, banksel, colsel, regsel, data, r3write, convreset, out);
 
 endmodule
