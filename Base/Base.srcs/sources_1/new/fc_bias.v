@@ -55,11 +55,15 @@ module fc_bias (
         for (i = 0; i < 4; i=i+1) begin
             and3$ a2 (reg2en[i], we[i], write, banksel);
         end
-        for (i = 0; i < 3; i=i+1) begin
-            and3$ a3 (reg3en[i], we[i+1], 1'b1, r3store); //???
-        end
-        and3$ a3p2 (reg3en[3], we[0], 1'b1, r3store); //???
+        
+        // for (i = 0; i < 3; i=i+1) begin
+            // and3$ a3 (reg3en[i], we[i+1], 1'b1, r3store); //???
+        // end
+        // and3$ a3p2 (reg3en[3], we[0], 1'b1, r3store); //???
     endgenerate
+
+    and (reg3en[0], we[0], r3store);
+    assign reg3en[3:1] = 3'b000;
 
     and3$ a4 (reg1intermediate[0], we[0], invbanksel, write);
     or2$ o1 (reg1en[0], reg1override, reg1intermediate[0]); // bank & we || override
@@ -90,9 +94,9 @@ module fc_bias (
 
 
 
-    mux4_32bit mux1 (reg1out[0], reg1out[1], reg1out[2], reg1out[3], mathregsel1, reg1op);
-    mux4_32bit mux2 (reg2out[0], reg2out[1], reg2out[2], reg2out[3], mathregsel, reg2op);
-    mux4_32bit mux3 (reg3out[0], reg3out[1], reg3out[2], reg3out[3], mathregsel, reg3op);
+    mux4_32bit mux1 (reg1out[0], reg1out[1], reg1out[2], reg1out[3], regsel1, reg1op);
+    mux4_32bit mux2 (reg2out[0], reg2out[1], reg2out[2], reg2out[3], regsel, reg2op);
+    mux4_32bit mux3 (reg3out[0], reg3out[1], reg3out[2], reg3out[3], regsel, reg3op);
     
 
     // wire [31:0] opB, opC;
@@ -115,16 +119,22 @@ module fc_bias (
     wire [7:0] macout, fcaddout, fcout;
     wire macoverflow;
     mac_8b mac1 (reg1op, reg2op, macout);
-    eightbitadder add1 (macout, reg3op, 1'b0, fcaddout, macoverflow);
-    mux2_8b mux4 (fcaddout, 8'hFF, macoverflow, fcout);
+    eightbitadder add1 (macout, reg3op, 1'b0, fcout, macoverflow); // changed fcaddout to fcout for wraparound
+    //mux2_8b mux4 (fcaddout, 8'hFF, macoverflow, fcout);
 
     wire [31:0] packaddout;
     packadd pack1 (reg1op, reg2op, packaddout);
 
     mux2_32bit mux5 (packaddout, {24'b0, fcout}, isFC, mathout); //mac out instead of 0
 
+    wire [31:0] r3outs;
+    assign r3outs = {reg3out[3][7:0],reg3out[2][7:0],reg3out[1][7:0],reg3out[0][7:0]};
 
-    mux2_32bit mux6 (reg3op, {reg3out[3][7:0],reg3out[2][7:0],reg3out[1][7:0],reg3out[0][7:0]}, isFC, out);
+    // mux2_32bit mux6 (reg3op, r3outs, isFC, out);
+
+    mux4_32bit mux6 (mathout, mathout, 32'b0, r3outs, {1'b0, isFC}, out);
+
+    //assign out = mathout;
 
 
     wire [71:0] convout;

@@ -32,8 +32,8 @@ wire MDS_mem_wr, PD_mem_wr, Controller_mem_wr;
 memory Memory(clock, ID_PC_Input[15:0], ID_IR_Input, MEM_TA_Output[15:0], MEM_ALU_Output, MEM_CS_Output[5], MEM_CS_Output[4:2], WB_MEM_Input, 
 MDS_mem_addr, MDS_mem_wdata, MDS_mem_wr, MDS_mem_rdata,
 SE_mem_addr, SE_mem_rdata, KSE_mem_addr, KSE_mem_rdata, 
-PD_mem_addr, PD_mem_wdata, PD_mem_wr, PD_mem_rdata,
-Controller_mem_addr, Controller_mem_wdata, Controller_mem_wr, Controller_mem_rdata,
+PD_mem_addr, PD_mem_wdata, PD_mem_wr, PD_mem_rdata, PD_byte,
+Controller_mem_addr, Controller_mem_wdata, Controller_mem_wr, Controller_mem_rdata, Controller_byte,
 MEM_STALL);
 
 // Branch Pred Nets
@@ -267,7 +267,7 @@ assign rs3 = EX_SR3_Output;
 
 wire PD_done_last_cycle, FC_done_last_cycle;
 wire [31:0] CS_last_cycle;
-wire PD_reset, PD_start, PD_done;
+wire PD_reset, PD_start_comb, PD_start, PD_done;
 wire Controller_start, is_FC_Block, isConv, Controller_done;
 dff_en PD_done_flip_flop(PD_done, clock, 1'b1, PD_done_last_cycle);
 dff_en FC_done_flip_flop(Controller_done, clock, 1'b1, FC_done_last_cycle);
@@ -361,7 +361,8 @@ mux2_32bit Mux(SE_pixel_ptr, MDS_pixel_ptr, ex_cs[30], pixel_ptr);
 
 wire aug1_start;
 or(aug1_start, MDS_done, SE_done, KSE_done);
-and(PD_start, aug1_start, ex_cs[30]);
+and(PD_start_comb, aug1_start, ex_cs[30]);
+dff_en PD_start_dff(PD_start_comb, clock, 1'b1, PD_start);
 
 wire other_blocks;
 or(other_blocks, ex_cs[26], ex_cs[25], ex_cs[24]);
@@ -392,7 +393,9 @@ reg32_en S2size(size_output, clock, LD_S2, S2size_Output);
 reg32_en S2output_ptrs(rs2, clock, LD_S2, S2output_ptr);
 
 assign PD_reset = reset;
+wire PD_byte, Controllerb_byte;
 
+assign PD_byte = 1'b0;
 pixel_decode_block PD(
     clock,
     PD_reset,
@@ -431,7 +434,8 @@ fc_conv_bias FC(
     Controller_mem_addr,
     Controller_mem_wr,  // w = 1
     Controller_done,
-    Controller_mem_wdata
+    Controller_mem_wdata,
+    Controller_byte
 );
 
 endmodule

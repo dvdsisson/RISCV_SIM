@@ -12,8 +12,8 @@
 //   +4  : height  (32-bit)
 //   +8  : channels = 3  (32-bit)
 //   +12 : R-channel pixel data  (output_ptrA)
-//   +12 + W*H*4 : G-channel pixel data  (output_ptrB)
-//   +12 + 2*(W*H*4) : B-channel pixel data  (output_ptrC)
+//   +12 + W*H   : G-channel pixel data  (output_ptrB)
+//   +12 + 2*W*H : B-channel pixel data  (output_ptrC)
 //
 // BMP header offsets used:
 //   img_ptr + 18 : image width 
@@ -48,8 +48,8 @@ module metadata_storage_block (
     // Outputs stable from the cycle after done first goes high
     output wire [31:0] pixel_ptr,    // img_ptr + 54
     output wire [31:0] output_ptrA,  // out_ptr + 12
-    output wire [31:0] output_ptrB,  // out_ptr + 12 + W*H*4
-    output wire [31:0] output_ptrC,  // out_ptr + 12 + 2*(W*H*4)
+    output wire [31:0] output_ptrB,  // out_ptr + 12 + W*H
+    output wire [31:0] output_ptrC,  // out_ptr + 12 + 2*W*H
     output wire [31:0] cycle_cnt,    // W*H / 4
     output wire        done          
 );
@@ -61,8 +61,10 @@ module metadata_storage_block (
     // =========================================================================
     wire [31:0] state_q;
     wire [31:0] state_inc;
+    wire [31:0] next_state;
     wire        state_advance;
-    wire        cout_state;     //unused
+    wire        cout_state;     // unused
+    wire        s6;             // forward declaration: used in next-state mux below
 
     adder u_state_adder (
         .A   (state_q),
@@ -72,8 +74,16 @@ module metadata_storage_block (
         .Cout(cout_state)
     );
 
+    // S6 is a 1-cycle auto-advance state: wrap back to S0
+    mux2_32bit u_next_mux (
+        .inputzero  (state_inc),
+        .inputone   (32'd0),
+        .select     (s6),
+        .finaloutput(next_state)
+    );
+
     reg32_en_reset u_state_reg (
-        .datainput  (state_inc),
+        .datainput  (next_state),
         .clock      (clock),
         .enable     (state_advance),
         .reset      (reset),
@@ -89,7 +99,7 @@ module metadata_storage_block (
     not(ns1, state_q[1]);
     not(ns0, state_q[0]);
 
-    wire s0, s1, s2, s3, s4, s5, s6;
+    wire s0, s1, s2, s3, s4, s5;   // s6 forward-declared above
     and(s0, ns2,         ns1,         ns0        );  // 000  idle
     and(s1, ns2,         ns1,         state_q[0] );  // 001  read width
     and(s2, ns2,         state_q[1],  ns0        );  // 010  read height
@@ -130,16 +140,16 @@ module metadata_storage_block (
     // 4.  state_advance  -- when does the FSM move to the next state?
     //       S0      : advance on start
     //       S1-S5   : advance when req_active=1 AND mem_ready=1
-    //       S6      : stays (terminal; reset returns to S0)
+    //       S6      : auto-advance (1-cycle), returns to S0
     // =========================================================================
     wire adv_idle_w;    // S0 advance condition
-    wire rdy_w;         // req_active & mem_ready
+    wire rdy_w;         // req_active (mem_ready always 1)
     wire adv_mem_w;     // S1-S5 advance condition
 
     and(adv_idle_w,  s0,          start);
-    assign rdy_w = req_active_q;   // mem_ready always 1 (MEM_STALL=0)
+    assign rdy_w = req_active_q;
     and(adv_mem_w,   mem_state_w, rdy_w);
-    or (state_advance, adv_idle_w, adv_mem_w);
+    or (state_advance, adv_idle_w, adv_mem_w, s6);
 
     // =========================================================================
     // 5.  Memory control outputs
@@ -216,9 +226,9 @@ module metadata_storage_block (
     assign b_sel_w = {s5, s4};
 
     mux4_32bit u_mux_b (
-        .inputzero  (32'd0),
+        .inputzero  (32'd8),
         .inputone   (32'd4),
-        .inputtwo   (32'd8),
+        .inputtwo   (32'd0),
         .inputthree (32'd0),     // b_sel=11 never asserted
         .select     (b_sel_w),
         .finaloutput(mux_b_out)
@@ -310,8 +320,9 @@ module metadata_storage_block (
     );
 
     // Bit-shifts are zero-gate routing only
-    assign chn_bytes_wire = {pixel_cnt_w[29:0], 2'b00};  // << 2
-    assign cycle_cnt_wire = {2'b00, pixel_cnt_w[31:2]};  // >> 2
+  
+    assign chn_bytes_wire = width_q*height_q;                  // 1 byte per pixel per channel
+    assign cycle_cnt_wire = {2'b00, chn_bytes_wire[31:2]};  // >> 2: pixel_decode does 4 pixels/iter
 
     // =========================================================================
     // 14. Output pointer combinational adder chain

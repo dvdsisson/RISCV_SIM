@@ -26,11 +26,11 @@ module mac_8b (
         for (i=0; i<4; i=i+1) begin
             multiplier_8b mult1 (a[8*i+7:8*i], b[8*i+7:8*i], multout[i]);
             redor9b or1 ({2'b0, multout[i][14:8]}, multoverflow[i]);
-            assign satout[i] = {0, multout[i][14:8]};
+            assign satout[i] = multout[i][7:0];//{0, multout[i][14:8]};
             // mux2_8b mux1 (multout[i][7:0], 8'hFF, multoverflow[i], satout[i]);
-        end    
+        end
     endgenerate
-    
+
     compressionadder cadd1 ({satout[3], satout[2], satout[1], satout[0]}, out);
 
 endmodule

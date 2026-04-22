@@ -33,12 +33,14 @@ module memory(
     input [31:0] PDinputvalue,
     input PDW,
     output reg [31:0] PDoutputvalue,
+    input PDbyte,
 
     // FC Block Read/Write
     input [15:0] FCaddress,
     input [31:0] FCinputvalue,
     input FCW,
     output reg [31:0] FCoutputvalue,
+    input FCbyte,
 
     output MEM_STALL
 );
@@ -138,9 +140,11 @@ end
 always @(posedge clock) begin
     if (PDW == 1) begin
         mem_array[PDaddress]   <= PDinputvalue[7:0];
-        mem_array[PDaddress+1] <= PDinputvalue[15:8];
-        mem_array[PDaddress+2] <= PDinputvalue[23:16];
-        mem_array[PDaddress+3] <= PDinputvalue[31:24];
+        if (PDbyte == 1) begin
+            mem_array[PDaddress+1] <= PDinputvalue[15:8];
+            mem_array[PDaddress+2] <= PDinputvalue[23:16];
+            mem_array[PDaddress+3] <= PDinputvalue[31:24];
+        end
     end
 end
 
@@ -156,12 +160,13 @@ end
 always @(posedge clock) begin
     if (FCW == 1) begin
         mem_array[FCaddress]   <= FCinputvalue[7:0];
-        mem_array[FCaddress+1] <= FCinputvalue[15:8];
-        mem_array[FCaddress+2] <= FCinputvalue[23:16];
-        mem_array[FCaddress+3] <= FCinputvalue[31:24];
+        if (FCbyte == 1) begin
+            mem_array[FCaddress+1] <= FCinputvalue[15:8];
+            mem_array[FCaddress+2] <= FCinputvalue[23:16];
+            mem_array[FCaddress+3] <= FCinputvalue[31:24];
+        end
     end
 end
-
 
 assign MEM_STALL = 1'b0;
 

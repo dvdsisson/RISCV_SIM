@@ -43,8 +43,8 @@ module processor_tb;
         // Loading Program Into Memory (INPUT DESIRED PROGRAM FILE HERE)
         $readmemh("program.mem", uut.Memory.mem_array, 16'h3000);
         // Loading Data Files Into Memory (INPUT DESIRED DATA FILE HERE)
-	$readmemh("data.mem", uut.Memory.mem_array, 16'h2000);
-	$readmemh("data2.mem", uut.Memory.mem_array, 16'h4000);
+	$readmemh("data.mem", uut.Memory.mem_array, 16'h1000);
+	//$readmemh("data2.mem", uut.Memory.mem_array, 16'h4000);
 
         // Releasing Pipeline Signals Now In Control Of Pipeline
 	
