@@ -12,6 +12,6 @@ module divider(
     );
 
     divider_block usigned_div(clk, rst, start, A, B, 1'b0, REMUoutput, DIVUoutput, done);
-    divider_block usigned_div(clk, rst, start, A, B, 1'b1, REMoutput, DIVoutput, done);
+    //divider_block usigned_div(clk, rst, start, A, B, 1'b1, REMoutput, DIVoutput, done);
 
 endmodule

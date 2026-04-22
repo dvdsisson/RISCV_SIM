@@ -95,7 +95,7 @@ module processor_tb;
 
 	release uut.V_WB_LDREG;
 	release uut.WB_DR;
-        #25000; // INPUT DESIRED RUNTIME IN NANOSECONDS HERE
+        #2500; // INPUT DESIRED RUNTIME IN NANOSECONDS HERE
 
         $finish;
 

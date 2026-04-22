@@ -54,8 +54,8 @@ wire [7:0] ID_bp_table_index;
 wire ID_bp_taken_Output;
 
 //or(i1, ID_BR_STALL, EX_BR_STALL);
-//not(ID_VALID_Input, i1);
-assign ID_VALID_Input = 1'b1;
+not(ID_VALID_Input, JMP_PCMUX);
+
 or(i2, DEP_STALL, EX_STALL, MEM_STALL);
 not(LD_ID, i2); 
 not(i3, JMP_PCMUX); 
@@ -147,7 +147,7 @@ and(DEP_STALL, dep_stall_r1, dep_stall_r2, dep_stall_r3);
 
 and(ID_BR_STALL, ID_VALID_Output, EX_CS_Input[18]);
 not(i17, DEP_STALL);
-and(EX_VALID_Input, ID_VALID_Output, i17);
+and(EX_VALID_Input, ID_VALID_Output, i17, i3);
 
 or(i18, EX_STALL, MEM_STALL);
 not(LD_EX, i18); 

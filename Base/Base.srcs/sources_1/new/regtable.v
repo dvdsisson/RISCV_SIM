@@ -9,10 +9,10 @@ module regtable (
     // output [31:0] writedataout
 );
     
-    wire [31:0] index, we, sel;
+    wire [31:0] we, sel;
     wire [31:0] stored [0:31];
 
-    fivebitdecoder dec1 (sel, index);
+    fivebitdecoder dec1 (sel, writeindex);
 
     genvar i;
 
