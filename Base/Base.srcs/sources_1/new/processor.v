@@ -24,8 +24,17 @@ wire V_EX_LDREG, V_MEM_LDREG, V_WB_LDREG;
 wire [4:0] EX_DR, MEM_DR, WB_DR;
 wire [31:0] WB_DATA;
 
+wire [15:0] MDS_mem_addr, SE_mem_addr, KSE_mem_addr, PD_mem_addr, Controller_mem_addr;
+wire [31:0] MDS_mem_wdata, MDS_mem_rdata, SE_mem_rdata, KSE_mem_rdata, PD_mem_rdata, PD_mem_wdata, Controller_mem_rdata, Controller_mem_wdata;
+wire MDS_mem_wr, PD_mem_wr, Controller_mem_wr;
+
 // MEMORY INITIALIZATION
-memory Memory(clock, ID_PC_Input[15:0], ID_IR_Input, MEM_TA_Output[15:0], MEM_ALU_Output, MEM_CS_Output[5], MEM_CS_Output[4:2], WB_MEM_Input, MEM_STALL);
+memory Memory(clock, ID_PC_Input[15:0], ID_IR_Input, MEM_TA_Output[15:0], MEM_ALU_Output, MEM_CS_Output[5], MEM_CS_Output[4:2], WB_MEM_Input, 
+MDS_mem_addr, MDS_mem_wdata, MDS_mem_wr, MDS_mem_rdata,
+SE_mem_addr, SE_mem_rdata, KSE_mem_addr, KSE_mem_rdata, 
+PD_mem_addr, PD_mem_wdata, PD_mem_wr, PD_mem_rdata,
+Controller_mem_addr, Controller_mem_wdata, Controller_mem_wr, Controller_mem_rdata,
+MEM_STALL);
 
 // Branch Pred Nets
 wire [31:0] curr_PC, pred_PC, bp_ex_PC, bp_ex_target;
@@ -33,7 +42,7 @@ wire bp_pred_Taken;
 wire [4:0] bp_table_index, bp_ex_table_index;
 wire bp_ex_isbranch, bp_ex_taken;
 
-branchPred branchpred1 (clock, curr_PC, pred_PC, bp_pred_taken, bp_table_index, bp_ex_isbranch, bp_ex_taken, bp_ex_table_index, bp_ex_PC, bp_ex_target);
+branchPred branchpred1 (clock, reset, curr_PC, pred_PC, bp_pred_taken, bp_table_index, bp_ex_isbranch, bp_ex_taken, bp_ex_table_index, bp_ex_PC, bp_ex_target);
 
 // INSTRUCTION FETCH
 // ------------------------------------------------------------------------------
@@ -54,8 +63,8 @@ or(LD_PC, i4, JMP_PCMUX);
 reg32_en_reset PC(PC_Input, clock, LD_PC, reset, 32'b00000000000000000011000000000000, ID_PC_Input);
 //instructioncache(ID_PC_Input, ID_IR_Input);
 assign curr_PC = ID_PC_Input; //Branch Pred
-//adder Adder1(ID_PC_Input, 32'b00000000000000000000000000000100, 1'b0, ID_PC_Input_PlusFour);
-mux2_32bit Mux1(pred_PC, JMP_PC, JMP_PCMUX, PC_Input);
+adder Adder1(ID_PC_Input, 32'b00000000000000000000000000000100, 1'b0, ID_PC_Input_PlusFour);
+mux2_32bit Mux1(pred_PC, JMP_PC, JMP_PCMUX, PC_Input); //pred pc instead of plus 4
 reg32_en ID_PC(ID_PC_Input, clock, LD_ID, ID_PC_Output);
 reg32_en ID_IR(ID_IR_Input, clock, LD_ID, ID_IR_Output);
 dff_en ID_VALID(ID_VALID_Input, clock, LD_ID, ID_VALID_Output);
@@ -96,8 +105,6 @@ wire dep_stall_r1, dep_stall_r2, dep_stall_r3;
 wire v_ex_df;
 
 and(v_ex_df, V_EX_LDREG, EX_CS_Input[5]); 
-
-if load in execute
 
 forwarding df1 (S1Reg, 
 V_EX_LDREG,  EX_DR,  v_ex_df,        EX_DATA_OUT,
@@ -160,20 +167,22 @@ dff_en EX_bp_taken(ID_bp_taken_Output, clock, LD_ID, EX_bp_taken_Output);
 // EXECUTE
 // ------------------------------------------------------------------------------
 wire [31:0] i19, i20, i21;
-wire i22;
+wire i22, alu_ex_stall, ex_stall_out;
 
 assign MEM_PC_Input = EX_PC_Output;
 mux2_32bit Mux2(EX_PC_Output, EX_SR1_Output, EX_CS_Output[16], i19);
 mux2_32bit Mux3(EX_SR2_Output, EX_IV_Output, EX_CS_Output[15], i20);
 adder Adder2(i19, EX_IV_Output, 1'b0, MEM_TA_Input);
 assign JMP_PC = MEM_TA_Input;
-ALU alu(EX_SR1_Output, i20, EX_CS_Output[14:10], i21, EX_STALL);
+ALU alu(EX_SR1_Output, i20, EX_CS_Output[14:10], i21, alu_ex_stall);
 mux2_32bit Mux4(i21, MEM_TA_Input, EX_CS_Output[9], MEM_ALU_Input);
 assign MEM_DR_Input = EX_DR_Output;
 assign EX_DR = EX_DR_Output[4:0];
 assign MEM_CS_Input = EX_CS_Output;
 assign MEM_VALID_Input = EX_VALID_Output;
 branchcomparator BranchComparator(EX_SR1_Output, EX_SR2_Output, EX_CS_Output[8:6], i22);
+
+or(EX_STALL, alu_ex_stall, ex_stall_out);
 
 wire branch_take;
 and(branch_take, i22, EX_VALID_Output);
@@ -188,6 +197,9 @@ assign bp_ex_table_index = EX_bp_table_index;
 assign bp_ex_PC = EX_PC_Output;
 assign bp_ex_target = MEM_TA_Input;
 assign bp_ex_taken = branch_take;
+
+
+and andbpbranch (bp_ex_isbranch, EX_CS_Output[18], MEM_VALID_Input);
 
 // block:
 // bp_ex_isbranch, bp_ex_taken, bp_ex_table_index, bp_ex_PC, bp_ex_target
@@ -239,5 +251,187 @@ assign WB_DR = WB_DR_Output[4:0];
 assign WB_DATA_OUT = WB_DATA;
 and(V_WB_LDREG, WB_VALID_Output, WB_CS_Output[17]);
 // ------------------------------------------------------------------------------
+
+// AUGMENTED EXECUTE
+
+wire[31:0] ex_cs;
+wire [31:0] rs1, rs2, rs3;
+assign ex_cs = EX_CS_Output;
+assign rs1 = EX_SR1_Output;
+assign rs2 = EX_SR2_Output;
+assign rs3 = EX_SR3_Output;
+
+
+// EXECUTE STALL LOGIC
+// ------------------------------------------------------------------------------
+
+wire PD_done_last_cycle, FC_done_last_cycle;
+wire [31:0] CS_last_cycle;
+wire PD_reset, PD_start, PD_done;
+wire Controller_start, is_FC_Block, isConv, Controller_done;
+dff_en PD_done_flip_flop(PD_done, clock, 1'b1, PD_done_last_cycle);
+dff_en FC_done_flip_flop(Controller_done, clock, 1'b1, FC_done_last_cycle);
+reg32_en CS_last_cycle_register(ex_cs, clock, 1'b1, CS_last_cycle);
+
+wire not30, mdsint;
+not(not30, CS_last_cycle[30]);
+or(mdsint, not30, PD_done_last_cycle);
+and(MDS_start, mdsint, ex_cs[30], EX_VALID_Output);
+
+wire not27, seint;
+not(not27, CS_last_cycle[27]);
+or(seint, not27, FC_done_last_cycle);
+and(SE_start, seint, ex_cs[27], EX_VALID_Output);
+
+wire finalstart, finaldone, Q1, Q2;
+or(finalstart, MDS_start, SE_start);
+or(finaldone, PD_done, Controller_done, reset);
+
+nor(Q1, finaldone, Q2);
+nor(Q2, finalstart, Q1);
+assign ex_stall_out = Q1;
+
+// FIRST STAGE
+// ------------------------------------------------------------------------------
+
+wire MDS_reset, MDS_start, MDS_done;
+wire [31:0] MDS_pixel_ptr, output_ptrA, output_ptrB, output_ptrC, cycle_cnt;
+assign MDS_reset = reset;
+
+metadata_storage_block MDS (
+    clock,
+    MDS_reset,
+    MDS_start,
+    rs1,
+    rs2,
+    MDS_mem_addr,
+    MDS_mem_wdata,
+    MDS_mem_wr,      
+    MDS_mem_rdata,   
+    MDS_pixel_ptr,    
+    output_ptrA,  
+    output_ptrB,  
+    output_ptrC,  
+    cycle_cnt,   
+    MDS_done         
+);
+
+wire SE_reset, SE_start, SE_ready, SE_done, is_fc;
+wire [31:0] SE_pixel_ptr, chn_amnt_output, cols_output, lat_shifts_output, vert_shifts_output, size_output;
+assign SE_reset = reset;
+assign is_fc = ex_cs[28];
+
+size_extraction_block2 SE(
+    clock,
+    SE_reset,
+    SE_start,
+    rs3,
+    is_fc,
+    SE_mem_addr,
+    SE_mem_rdata, 
+    SE_pixel_ptr,
+    chn_amnt_output,
+    cols_output,
+    lat_shifts_output,   
+    vert_shifts_output,  
+    size_output,
+    SE_ready,
+    SE_done
+);
+
+wire KSE_reset, KSE_start, KSE_done;
+wire [31:0] kern_size, kern_ptr_out;
+assign KSE_reset = reset;
+assign KSE_start = SE_ready;
+
+kern_size_extraction_block KSE(
+    clock,
+    KSE_reset,
+    KSE_start,
+    rs1,     
+    KSE_mem_addr,
+    KSE_mem_rdata, 
+    kern_size,      
+    kern_ptr_out,   
+    KSE_done
+);
+
+wire [31:0] pixel_ptr;
+mux2_32bit Mux(SE_pixel_ptr, MDS_pixel_ptr, ex_cs[30], pixel_ptr);
+
+wire aug1_start;
+or(aug1_start, MDS_done, SE_done, KSE_done);
+and(PD_start, aug1_start, ex_cs[30]);
+
+wire other_blocks;
+or(other_blocks, ex_cs[26], ex_cs[25], ex_cs[24]);
+and(Controller_start, aug1_start, other_blocks);
+
+
+// SECOND STAGE
+// ------------------------------------------------------------------------------
+
+wire [31:0] S2pixel_ptr_Output, S2output_ptrA_Output, S2output_ptrB_Output, S2output_ptrC_Output, S2cycle_amnt_Output, S2columns_Output, S2lat_shifts_Output, S2vert_shifts_Output, S2chn_amnt_Output, S2kern_size_Output, S2kern_ptr_Output, S2bias_ptr_Output, S2fc_cyc_Output, S2weight_ptr_Output, S2size_Output, S2output_ptr; 
+wire LD_S2;
+assign LD_S2 = 1'b1;
+
+reg32_en S2pixel_ptr(pixel_ptr, clock, LD_S2, S2pixel_ptr_Output);
+reg32_en S2output_ptrA(output_ptrA, clock, LD_S2, S2output_ptrA_Output);
+reg32_en S2output_ptrB(output_ptrB, clock, LD_S2, S2output_ptrB_Output);
+reg32_en S2output_ptrC(output_ptrC, clock, LD_S2, S2output_ptrC_Output);
+reg32_en S2cycle_amnt(cycle_cnt, clock, LD_S2, S2cycle_amnt_Output);
+reg32_en S2columns(cols_output, clock, LD_S2, S2columns_Output);
+reg32_en S2lat_shifts(lat_shifts_output, clock, LD_S2, S2lat_shifts_Output);
+reg32_en S2vert_shifts(vert_shifts_output, clock, LD_S2, S2vert_shifts_Output);
+reg32_en S2chn_amnt(chn_amnt_output, clock, LD_S2, S2chn_amnt_Output);
+reg32_en S2kern_size(kern_size, clock, LD_S2, S2kern_size_Output);
+reg32_en S2kern_ptr(kern_ptr_out, clock, LD_S2, S2kern_ptr_Output);
+reg32_en S2bias_ptr(rs1, clock, LD_S2, S2bias_ptr_Output);
+reg32_en S2weight_ptr(rs1, clock, LD_S2, S2weight_ptr_Output);
+reg32_en S2size(size_output, clock, LD_S2, S2size_Output);
+reg32_en S2output_ptrs(rs2, clock, LD_S2, S2output_ptr);
+
+assign PD_reset = reset;
+
+pixel_decode_block PD(
+    clock,
+    PD_reset,
+    PD_start,
+    S2pixel_ptr_Output,
+    S2output_ptrA_Output,
+    S2output_ptrB_Output,
+    S2output_ptrC_Output,
+    S2cycle_amnt_Output,
+    PD_mem_addr,
+    PD_mem_wdata,
+    PD_mem_wr,      
+    PD_mem_rdata,
+    PD_done
+);
+
+assign is_FC_Block = ex_cs[24];
+assign isConv = ex_cs[26];
+
+fc_conv_bias FC(
+    clock, 
+    Controller_start, 
+    is_FC_Block, 
+    isConv,
+    Controller_mem_rdata,
+    S2pixel_ptr_Output, 
+    S2kern_ptr_Output, 
+    S2bias_ptr_Output, 
+    S2weight_ptr_Output, 
+    S2output_ptr, 
+    S2lat_shifts_Output, 
+    S2vert_shifts_Output,
+    S2size_Output, 
+    S2columns_Output, 
+    S2chn_amnt_Output,
+    Controller_mem_addr,
+    Controller_mem_wr,  // w = 1
+    Controller_done,
+    Controller_mem_wdata
+);
 
 endmodule

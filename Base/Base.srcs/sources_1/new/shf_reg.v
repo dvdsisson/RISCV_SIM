@@ -24,18 +24,18 @@ module shf_reg
 
     #(parameter length = 5) (
 
-    input clk, en, in, 
+    input clk, en, in, reset,
     output [length-1:0] out
 
     );
 
-    wire [length-1:1] flopOut;
+    wire [length-1:0] flopOut;
 
-    dff_en flop0 (in, clk, en, flopOut[0]);
+    dff_en_reset flop0 (in, clk, en, reset, 1'b0, flopOut[0]);
     genvar i;
     generate
         for (i=1; i<length; i=i+1) begin: shfReg
-            dff_en flop (flopOut[i-1], clk, en, flopOut[i]);
+            dff_en_reset flop (flopOut[i-1], clk, en, reset, 1'b0, flopOut[i]);
         end
     endgenerate
 

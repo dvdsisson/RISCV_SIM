@@ -9,7 +9,7 @@ module twobittable (
     // output out
 );
     
-    wire [31:0] index, we;
+    wire [31:0] we, sel;
     wire [31:0] stored;
 
     fivebitdecoder dec1 (sel, writeindex);
@@ -18,13 +18,12 @@ module twobittable (
 
     generate
         for (i=0; i<32; i=i+1) begin
-            and (we[i], sel[i], writeenable);
+            and a1(we[i], sel[i], writeenable);
             twobitcounter regs1 (clk, we[i], inc, reset, stored[i]);
         end    
     endgenerate
 
-
-    mux32_32b mux1 (
+    mux32_32bit mux1 (
         stored[0],
         stored[1],
         stored[2],
@@ -61,7 +60,7 @@ module twobittable (
         predout
     );
 
-    // mux32_32b mux2 (
+    // mux32_32bit mux2 (
     //     stored[0],
     //     stored[1],
     //     stored[2],

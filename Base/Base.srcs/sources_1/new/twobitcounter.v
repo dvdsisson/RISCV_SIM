@@ -22,7 +22,7 @@
 
 module twobitcounter(
 
-    input clk, en, inc, reset
+    input clk, en, inc, reset,
     output out
 
     );
@@ -45,17 +45,9 @@ module twobitcounter(
     or (b0_next, i1, i3, i4); // b0 = (b1 * b0') + (inc * b0') + (inc * b1)
     or (b1_next, i0, i2, i4); // b0 = (b1 * b0)  + (inc * b0)  + (inc * b1)
 
-    dff_en_reset low  (b0_next, clk, reset, 1'b1, en, b0);
-    dff_en_reset high (b1_next, clk, reset, 1'b0, en, b1);
+    dff_en_reset low  (b0_next, clk, en, reset, 1'b1, b0);
+    dff_en_reset high (b1_next, clk, en, reset, 1'b0, b1);
 
     assign out = b1;
 
 endmodule
-
-module dff_en_reset(
-    input datainput,
-    input clock,
-    input enable,
-    input reset,
-    input resetvalue,
-    output dataoutput

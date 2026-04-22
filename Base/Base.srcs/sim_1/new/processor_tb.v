@@ -23,6 +23,7 @@ module processor_tb;
 	force uut.ID_BR_STALL = 1'b0;
 	force uut.DEP_STALL = 1'b0;
 	force uut.EX_BR_STALL = 1'b0;
+	force uut.EX_CS_Output = 32'b0;
 	force uut.EX_STALL = 1'b0;
 	force uut.JMP_PCMUX = 1'b0;
 	force uut.MEM_STALL = 1'b0;
@@ -36,13 +37,14 @@ module processor_tb;
 	force uut.EX_DR = 5'b00000;
 	force uut.MEM_DR = 5'b00000;
 	force uut.WB_DR = 5'b00000;
-        #10;
+        #100;
         reset = 0;
 
         // Loading Program Into Memory (INPUT DESIRED PROGRAM FILE HERE)
         $readmemh("program.mem", uut.Memory.mem_array, 16'h3000);
         // Loading Data Files Into Memory (INPUT DESIRED DATA FILE HERE)
-	$readmemh("data.mem", uut.Memory.mem_array, 16'h3030);
+	$readmemh("data.mem", uut.Memory.mem_array, 16'h2000);
+	$readmemh("data2.mem", uut.Memory.mem_array, 16'h4000);
 
         // Releasing Pipeline Signals Now In Control Of Pipeline
 	
@@ -52,8 +54,9 @@ module processor_tb;
 	release uut.ID_BR_STALL;
 	release uut.DEP_STALL;
 	release uut.EX_VALID_Output;
+        release uut.EX_CS_Output;
+
 	#10
-	
 	release uut.EX_BR_STALL;
 	release uut.EX_STALL;
 	release uut.JMP_PCMUX;

@@ -9,7 +9,7 @@ module regtable (
     // output [31:0] writedataout
 );
     
-    wire [31:0] index, we;
+    wire [31:0] index, we, sel;
     wire [31:0] stored [0:31];
 
     fivebitdecoder dec1 (sel, index);
@@ -18,13 +18,13 @@ module regtable (
 
     generate
         for (i=0; i<32; i=i+1) begin
-            and (we[i], sel[i], writeenable);
+            and a1(we[i], sel[i], writeenable);
             reg32_en_reset regs1 (datain, clk, we[i], reset, 32'b0, stored[i]);
         end    
     endgenerate
 
 
-    mux32_32b mux1 (
+    mux32_32bit mux1 (
         stored[0],
         stored[1],
         stored[2],
@@ -61,7 +61,7 @@ module regtable (
         readdataout
     );
 
-    // mux32_32b mux2 (
+    // mux32_32bit mux2 (
     //     stored[0],
     //     stored[1],
     //     stored[2],

@@ -11,7 +11,7 @@ module registerfile(
     output [31:0] S1Value,
     output [31:0] S2Value,
     output [31:0] S3Value,
-    reset
+    input reset
     );
 
 wire DR4, DR3, DR2, DR1, DR0, NOTDR4, NOTDR3, NOTDR2, NOTDR1, NOTDR0;

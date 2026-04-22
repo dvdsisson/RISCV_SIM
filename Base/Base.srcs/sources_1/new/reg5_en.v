@@ -9,7 +9,7 @@ module reg5_en(
 
 genvar i;
 generate
-    for (i = 0; i < 4; i=i+1) begin : dff_array
+    for (i = 0; i < 5; i=i+1) begin : dff_array
         dff_en u_dff (
             .datainput(datainput[i]),
             .clock(clock),

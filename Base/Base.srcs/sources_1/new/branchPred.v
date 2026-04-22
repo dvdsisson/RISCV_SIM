@@ -23,6 +23,7 @@
 module branchPred(
 
     input clk,
+    input reset,
 
     input [31:0] curr_PC,
     output [31:0] pred_PC,
@@ -38,7 +39,7 @@ module branchPred(
 
     // Global History Register
     wire [4:0] GHR, hashindex;
-    shf_reg shf0 #(.length(5)) (clk, isBranch, Taken, GHR);
+    shf_reg shf0 (clk, isBranch, Taken, reset, GHR);
 
     genvar i;
     generate
@@ -71,7 +72,7 @@ module branchPred(
 
     // Output
     wire [31:0] PC_plus_four;
-    adder(curr_PC, 32'h4, 1'b0, PC_plus_four);
+    adder add1(curr_PC, 32'h4, 1'b0, PC_plus_four);
 
     and amuxout1 (pred_Taken, tagmatch, predout);
     
